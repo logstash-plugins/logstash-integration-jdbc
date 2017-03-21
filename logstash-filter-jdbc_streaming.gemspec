@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name            = 'logstash-filter-jdbc'
+  s.name            = 'logstash-filter-jdbc_streaming'
   s.version         = '1.0.0'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "This filter executes a SQL query and store the result set in the event."
@@ -21,7 +21,9 @@ Gem::Specification.new do |s|
   # Gem dependencies
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
   s.add_runtime_dependency 'sequel'
+  s.add_runtime_dependency 'lru_redux' # lru cache with ttl
 
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'jdbc-derby'
+  s.add_development_dependency 'jdbc-mysql'
 end

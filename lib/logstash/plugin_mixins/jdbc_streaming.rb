@@ -3,7 +3,7 @@ require "logstash/config/mixin"
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
-module LogStash::PluginMixins::Jdbc
+module LogStash module PluginMixins module JdbcStreaming
 
   # This method is called when someone includes this module
   def self.included(base)
@@ -11,7 +11,6 @@ module LogStash::PluginMixins::Jdbc
     base.extend(self)
     base.setup_jdbc_config
   end
-
 
   public
   def setup_jdbc_config
@@ -36,7 +35,7 @@ module LogStash::PluginMixins::Jdbc
 
     # Connection pool configuration.
     # How often to validate a connection (in seconds)
-    config :jdcb_validation_timeout, :validate => :number, :default => 3600
+    config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 
   public
@@ -49,7 +48,7 @@ module LogStash::PluginMixins::Jdbc
     @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
-      @database.pool.connection_validation_timeout = @jdcb_validation_timeout
+      @database.pool.connection_validation_timeout = @jdbc_validation_timeout
     end
     begin
       @database.test_connection
@@ -58,31 +57,4 @@ module LogStash::PluginMixins::Jdbc
       raise e
     end
   end # def prepare_jdbc_connection
-
-  public
-  def execute_statement(statement, parameters)
-    success = false
-    begin
-      #Symbolize parameters keys to use with Sequel
-      parameters = parameters.inject({}) do |hash,(k,v)|
-        case v
-        when LogStash::Timestamp
-          hash[k.to_sym] = v.time
-        else
-          hash[k.to_sym] = v
-        end
-        hash
-      end
-      query = @database[statement,parameters]
-      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
-      query.all do |row|
-        #Stringify row keys
-        yield row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash}
-      end
-      success = true
-    rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
-      @logger.warn("Exception when executing JDBC query", :exception => e)
-    end
-    return success
-  end
-end
+end end end
