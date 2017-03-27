@@ -1,6 +1,6 @@
 # Logstash Plugin
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc.svg)](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc)
+[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc_streaming.svg)](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc_streaming)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
