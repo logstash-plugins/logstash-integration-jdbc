@@ -7,22 +7,16 @@ Gem::Specification.new do |s|
   s.authors         = ["Elastic"]
   s.email           = 'info@elastic.co'
   s.homepage        = "http://www.elastic.co/guide/en/logstash/current/index.html"
-  # to fool jar_dependencies to mimic our other plugin gradle vendor script behaviour
-  # the rake vendor task removes jars dir and jars downloaded to it
-  s.require_paths   = ["lib", "jars"]
+  s.require_paths   = ["lib", "vendor/jar-dependencies"]
 
   # Files
-  s.files = Dir['lib/**/*','vendor/**/*','spec/**/*','*.gemspec','*.md','CONTRIBUTORS','Gemfile','LICENSE','NOTICE.TXT']
-   # Tests
+  s.files = Dir["lib/**/*","spec/**/*","*.gemspec","*.md","CONTRIBUTORS","Gemfile","LICENSE","NOTICE.TXT", "vendor/jar-dependencies/**/*.jar", "vendor/jar-dependencies/**/*.rb", "VERSION", "docs/**/*"]
+
+  # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 
   # Special flag to let us know this is actually a logstash plugin
   s.metadata = { "logstash_plugin" => "true", "logstash_group" => "filter" }
-
-  derby_version = "10.14.1.0"
-  s.requirements << "jar 'org.apache.derby:derby', '#{derby_version}'"
-  s.requirements << "jar 'org.apache.derby:derbyclient', '#{derby_version}'"
-  # we may need 'org.apache.derby:derbynet' in the future, marking this here
 
   s.add_development_dependency 'jar-dependencies', '~> 0.3'
 
