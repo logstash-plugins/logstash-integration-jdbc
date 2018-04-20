@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative "lookup_result"
 require "logstash/util/loggable"
 

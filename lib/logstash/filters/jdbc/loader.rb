@@ -10,9 +10,9 @@ module LogStash module Filters module Jdbc
 
     CONNECTION_ERROR_MSG = "Remote DB connection error when executing loader Jdbc query"
 
-    attr_reader :id, :table, :temp_table, :query, :max_rows
+    attr_reader :id, :table, :query, :max_rows
     attr_reader :connection_string, :driver_library, :driver_class
-    attr_reader :user, :password
+    attr_reader :user, :password, :staging_directory
 
     def build_remote_db
       @remote = ReadOnlyDatabase.create(connection_string, driver_class, driver_library, user, password)
@@ -46,7 +46,6 @@ module LogStash module Filters module Jdbc
 
     def post_initialize
       if valid?
-        @temp_table = "#{TEMP_TABLE_PREFIX}#{@table}".to_sym
         @table = @table.to_sym
       end
     end
@@ -108,6 +107,12 @@ module LogStash module Filters module Jdbc
       else
         @option_errors << "The 'jdbc_password' option for '#{@table}' must be a string"
       end
+
+      @staging_directory = @options["staging_directory"]
+      if @staging_directory
+        FileUtils.mkdir_p(@staging_directory)
+      end
+
       @valid = @option_errors.empty?
     end
   end

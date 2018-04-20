@@ -1,9 +1,8 @@
+# encoding: utf-8
 require_relative "validatable"
 require_relative "column"
 
 module LogStash module Filters module Jdbc
-
-  TEMP_TABLE_PREFIX = "temp_".freeze
 
   class DbObject < Validatable
     #   {name => "servers", index_columns => ["ip"], columns => [["ip", "text"], ["name", "text"], ["location", "text"]]},
@@ -12,6 +11,9 @@ module LogStash module Filters module Jdbc
 
     def build(db)
       return unless valid?
+      if db.nil?
+        raise "DbObject given a database instance that is nil"
+      end
       schema_gen = db.create_table_generator()
       @columns.each {|col| schema_gen.column(col.name, col.datatype)}
       schema_gen.index(@index_columns)
@@ -25,10 +27,6 @@ module LogStash module Filters module Jdbc
 
     def <=>(other)
       @name <=> other.name
-    end
-
-    def as_temp_table_opts
-      {"name" => "#{TEMP_TABLE_PREFIX}#{@name}", "preserve_existing" => @preserve_existing, "index_columns" => @index_columns.map(&:to_s), "columns" => @columns.map(&:to_array)}
     end
 
     def to_s

@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative 'db_object'
 
 module LogStash module Filters module Jdbc
@@ -9,12 +10,9 @@ module LogStash module Filters module Jdbc
       @local = local
       @loaders = loaders
       @preloaders = []
+      @reload_counter = Concurrent::AtomicFixnum.new(0)
       preloaders.map do |pre|
-        dbo = DbObject.new(pre)
-        @preloaders << dbo
-        hash = dbo.as_temp_table_opts
-        _dbo = DbObject.new(hash)
-        @preloaders << _dbo if _dbo.valid?
+        @preloaders << DbObject.new(pre)
       end
       @preloaders.sort!
     end
@@ -22,6 +20,7 @@ module LogStash module Filters module Jdbc
     def initial_load
       do_preload
       local.populate_all(loaders)
+      @reload_counter.increment
     end
 
     def repeated_load
@@ -29,6 +28,10 @@ module LogStash module Filters module Jdbc
 
     def call
       repeated_load
+    end
+
+    def reload_count
+      @reload_counter.value
     end
 
     private

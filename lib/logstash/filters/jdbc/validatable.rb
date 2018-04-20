@@ -1,11 +1,8 @@
 # encoding: utf-8
-
 module LogStash module Filters module Jdbc
   class Validatable
-    def self.find_validation_errors(array_of_options)
-      if !array_of_options.is_a?(Array)
-        return "The options must be an Array"
-      end
+    def self.find_validation_errors(options)
+      array_of_options = Array(options)
       errors = []
       array_of_options.each do |options|
         instance = new(options)

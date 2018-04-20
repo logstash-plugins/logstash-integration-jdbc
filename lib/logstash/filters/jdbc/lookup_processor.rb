@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative "lookup"
 require_relative "read_write_database"
 
@@ -23,16 +24,14 @@ module LogStash module Filters module Jdbc
         errors << instance.formatted_errors
       end
       return nil if errors.empty?
-      # errors.unshift("For plugin #{}")
       errors.join("; ")
     end
 
     def initialize(lookups_array, globals)
-      @lookups_errors = []
       @lookups = lookups_array.map.with_index do |options, i|
         Lookup.new(options, globals, "lookup-#{i.next}")
       end
-      validate_lookups
+      @lookups_errors = validate_lookups
       if @lookups_errors.empty? && !globals.empty?
         @local = ReadWriteDatabase.create(*globals.values_at(
           "lookup_jdbc_connection_string",
@@ -61,7 +60,7 @@ module LogStash module Filters module Jdbc
 
     private
 
-    def validate_lookups
+    def validate_lookups(lookups_errors = [])
       ids = Hash.new(0)
       errors = []
       @lookups.each {|lookup| ids[lookup.id] += 1}
@@ -71,7 +70,7 @@ module LogStash module Filters module Jdbc
       if !errors.empty?
         errors.unshift("Id setting must be different across all lookups")
       end
-      @lookups_errors.concat(errors)
+      lookups_errors.concat(errors)
       targets = Hash.new {|h,k| h[k] = []}
       errors = []
       @lookups.each do |lookup|
@@ -85,7 +84,7 @@ module LogStash module Filters module Jdbc
       if !errors.empty?
         errors.unshift("Target setting must be different across all lookups")
       end
-      @lookups_errors.concat(errors)
+      lookups_errors.concat(errors)
     end
   end
 end end end

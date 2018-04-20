@@ -3,12 +3,25 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/filters/jdbc_static"
 require "sequel"
 require "sequel/adapters/jdbc"
+require "stud/temporary"
+require "timecop"
+
+LogStash::Logging::Logger::configure_logging("ERROR")
 
 module LogStash module Filters
   describe JdbcStatic do
+
+    before(:all) do
+      @thread_abort = Thread.abort_on_exception
+      Thread.abort_on_exception = true
+    end
+
     let(:db1) { ::Sequel.connect("jdbc:derby:memory:testdb;create=true", :user=> nil, :password=> nil) }
-    let(:test_loader) { "SELECT * FROM reference_table" }
-    # let(:test_records) { db1[test_loader].all }
+    let(:loader_statement) { "SELECT ip, name, location FROM reference_table" }
+    let(:lookup_statement) { "SELECT * FROM servers WHERE ip LIKE :ip" }
+    let(:parameters_rhs) { "%%{[ip]}" }
+    let(:temp_import_path_plugin) { Stud::Temporary.pathname }
+    let(:temp_import_path_rspec) { Stud::Temporary.pathname }
 
     let(:local_db_objects) do
       [
@@ -21,15 +34,15 @@ module LogStash module Filters
         "loaders" => [
           {
             "id" =>"servers",
-            "query" => "select ip, name, location from reference_table",
+            "query" => loader_statement,
             "local_table" => "servers"
           }
         ],
         "local_db_objects" => local_db_objects,
         "local_lookups" => [
           {
-            "query" => "select * from servers WHERE ip LIKE :ip",
-            "parameters" => {"ip" => "%%{[ip]}"},
+            "query" => lookup_statement,
+            "parameters" => {"ip" => parameters_rhs},
             "target" => "server"
           }
         ]
@@ -38,33 +51,98 @@ module LogStash module Filters
 
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
-        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true" }
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true",
+        "staging_directory" => temp_import_path_plugin
+      }
     end
+
+    let(:add_records) do
+      lambda do |fd|
+        fd.puts "'10.1.1.1', 'ldn-server-1', 'LDN-2-3-4'"
+        fd.puts "'10.2.1.1', 'nyc-server-1', 'NYC-5-2-8'"
+        fd.puts "'10.3.1.1', 'mv-serv''r-1', 'MV-9-6-4'"
+      end
+    end
+
     let(:plugin) { JdbcStatic.new(mixin_settings.merge(settings)) }
 
     before do
       db1.drop_table(:reference_table) rescue nil
-      db1.create_table :reference_table do
+      db1.create_table(:reference_table) do
         String :ip
         String :name
         String :location
       end
-      db1[:reference_table].insert(:ip => "10.1.1.1", :name => "ldn-server-1", :location => "LDN-2-3-4")
-      db1[:reference_table].insert(:ip => "10.2.1.1", :name => "nyc-server-1", :location => "NYC-5-2-8")
-      db1[:reference_table].insert(:ip => "10.3.1.1", :name => "mv-server-1", :location => "MV-9-6-4")
-
-      plugin.register
+      ::File.open(temp_import_path_rspec, "w") do |fd|
+        add_records.call(fd)
+      end
+      import_cmd = "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE (null,'REFERENCE_TABLE','#{temp_import_path_rspec}',null,'''',null,1)"
+      db1.execute_ddl(import_cmd)
     end
-
-    after { plugin.stop }
 
     let(:event)      { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
 
     let(:ipaddr) { ".3.1.1" }
 
-    it "enhances an event" do
-      plugin.filter(event)
-      expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-server-1", "location"=>"MV-9-6-4"}])
+    describe "non scheduled operation" do
+      after { plugin.stop }
+
+      context "under normal conditions" do
+        it "enhances an event" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-serv'r-1", "location"=>"MV-9-6-4"}])
+        end
+      end
+
+      context "when the loader query returns no results" do
+        let(:loader_statement) { "SELECT ip, name, location FROM reference_table WHERE ip LIKE '20%'" }
+        it "add an empty array to the target field" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([])
+        end
+      end
+
+      context "when the loader query returns a large recordset, local db is filled in chunks" do
+        let(:add_records) do
+          lambda do |fd|
+            256.times do |octet3|
+              256.times do |octet4|
+                fd.puts "'10.4.#{octet3}.#{octet4}', 'server-#{octet3}-#{octet4}', 'MV-10-#{octet3}-#{octet4}'"
+              end
+            end
+          end
+        end
+        let(:ipaddr) { "10.4.254.255" }
+        let(:lookup_statement) { "SELECT * FROM servers WHERE ip = :ip" }
+        let(:parameters_rhs) { "ip" }
+        it "enhances an event" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([{"ip"=>ipaddr, "name"=>"server-254-255", "location"=>"MV-10-254-255"}])
+        end
+      end
+    end
+
+    describe "scheduled operation" do
+      context "given a loader_schedule" do
+        it "should properly schedule" do
+          settings["loader_schedule"] = "*/10 * * * * * UTC"
+          Timecop.travel(Time.now.utc - 3600)
+          Timecop.scale(60)
+          static_filter = JdbcStatic.new(mixin_settings.merge(settings))
+          runner = Thread.new(static_filter) do |filter|
+            filter.register
+          end
+          sleep 3
+          static_filter.filter(event)
+          expect(static_filter.loader_runner.reload_count).to be > 1
+          static_filter.stop
+          Timecop.return
+          expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-serv'r-1", "location"=>"MV-9-6-4"}])
+        end
+      end
     end
   end
 end end

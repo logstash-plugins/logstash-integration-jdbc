@@ -1,3 +1,4 @@
+# encoding: utf-8
 require_relative "basic_database"
 
 module LogStash module Filters module Jdbc
@@ -5,13 +6,13 @@ module LogStash module Filters module Jdbc
     def repopulate_all(loaders)
       case loaders.size
         when 1
-          fill_and_switch(loaders.first)
+          fill_local_table(loaders.first)
         when 2
-          fill_and_switch(loaders.first)
-          fill_and_switch(loaders.last)
+          fill_local_table(loaders.first)
+          fill_local_table(loaders.last)
         else
           loaders.each do |loader|
-            fill_and_switch(loader)
+            fill_local_table(loader)
           end
       end
     end
@@ -50,26 +51,37 @@ module LogStash module Filters module Jdbc
 
     private
 
-    def fill_and_switch(loader)
+    def fill_local_table(loader)
       begin
-        records = loader.fetch
-        return if records.size.zero?
         @rwlock.writeLock().lock()
-        tmp = self.class.random_name
-        @db.transaction do |conn|
-          @db[loader.temp_table].multi_insert(records)
-          @db.rename_table(loader.temp_table, tmp)
-          @db.rename_table(loader.table, loader.temp_table)
-          @db.rename_table(tmp, loader.table)
-          @db[loader.temp_table].truncate
+        start = Time.now.to_f
+        records = loader.fetch
+        records_size = records.size
+        return if records_size.zero?
+        logger.info("loader #{loader.id}, fetched #{records_size} records in: #{(Time.now.to_f - start).round(3)} seconds")
+        start = Time.now.to_f
+        import_file = ::File.join(loader.staging_directory, loader.table.to_s)
+        ::File.open(import_file, "w") do |fd|
+          dataset = @db[loader.table]
+          records.each do |hash|
+            array = hash.values.map {|val| dataset.literal(val) }
+            fd.puts(array.join(", "))
+          end
+          fd.fsync
         end
+        logger.info("loader #{loader.id}, saved fetched records to import file in: #{(Time.now.to_f - start).round(3)} seconds")
+        start = Time.now.to_f
+        import_cmd = "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE (null,'#{loader.table.upcase}','#{import_file}',null,'''',null,1)"
+        @db.execute_ddl(import_cmd)
+        FileUtils.rm_f(import_file)
+        logger.info("loader #{loader.id}, imported all fetched records in: #{(Time.now.to_f - start).round(3)} seconds")
       rescue *CONNECTION_ERRORS => err
         # we do not raise an error when there is a connection error, we hope that the connection works next time
-        logger.error("Connection error when filling lookup db from loader query results", :exception => err.message, :backtrace => err.backtrace.take(8))
+        logger.error("Connection error when filling lookup db from loader #{loader.id}, query results", :exception => err.message, :backtrace => err.backtrace.take(8))
       rescue => err
         # In theory all exceptions in Sequel should be wrapped in Sequel::Error
         # There are cases where exceptions occur in unprotected ensure sections
-        msg = "Exception when filling lookup db from loader query results, original exception: #{err.class}, original message: #{err.message}"
+        msg = "Exception when filling lookup db from loader #{loader.id}, query results, original exception: #{err.class}, original message: #{err.message}"
         logger.error(msg, :backtrace => err.backtrace.take(16))
         raise wrap_error(LoaderJdbcException, err, msg)
       ensure

@@ -1,3 +1,4 @@
+# encoding: utf-8
 module LogStash module Filters module Jdbc
   class LookupResult
     attr_reader :payload, :invalid_parameters

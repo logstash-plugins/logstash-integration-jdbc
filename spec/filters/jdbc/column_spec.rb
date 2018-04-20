@@ -2,7 +2,7 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/filters/jdbc/column"
 
-describe LogStash::Filters::Jdbc::Column  do
+describe LogStash::Filters::Jdbc::Column do
   let(:invalid_messages) do
     [
       "The column options must be an array",

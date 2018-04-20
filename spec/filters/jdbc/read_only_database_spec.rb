@@ -8,13 +8,14 @@ module LogStash module Filters module Jdbc
     let(:db) { Sequel.connect('mock://mydb') }
     let(:connection_string) { "mock://mydb" }
     let(:driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
-    subject(:read_only_db) { described_class.create(connection_string, driver_class) }
+    let(:driver_library) { nil }
+    subject(:read_only_db) { described_class.create(connection_string, driver_class, driver_library) }
 
     describe "basic operations" do
       describe "initializing" do
         it "tests the connection with defaults" do
           expect(Sequel::JDBC).to receive(:load_driver).once.with(driver_class)
-          expect(Sequel).to receive(:connect).once.with(connection_string, {:test => true}) #.and_return(db)
+          expect(Sequel).to receive(:connect).once.with(connection_string, {:test => true})
           expect(read_only_db.empty_record_set).to eq([])
         end
 
@@ -34,6 +35,29 @@ module LogStash module Filters module Jdbc
           expect(read_only_db.connected?).to be_falsey
           read_only_db.connect("a caller specific error message")
           expect(read_only_db.connected?).to be_truthy
+        end
+      end
+
+      describe "multiple driver loading" do
+        before :each do
+          allow(Sequel::JDBC).to receive(:load_driver)
+          allow_any_instance_of(described_class).to receive(:make_driver_path_loadable)
+        end
+
+        context "using three drivers" do
+          it "makes all loadable" do
+            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/bar.jar")
+            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/baz.jar")
+            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/biz.jar")
+            described_class.create("mock://mydb", "a driver class", "/foo/bar.jar, /foo/baz.jar, /foo/biz.jar")
+          end
+        end
+
+        context "just one driver" do
+          it "makes one loadable" do
+            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).once.with(anything, "/foo/bar.jar")
+            described_class.create("mock://mydb", "a driver class", "/foo/bar.jar")
+          end
         end
       end
 
