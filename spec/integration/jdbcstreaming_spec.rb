@@ -1,6 +1,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/filters/jdbc_streaming"
-require 'jdbc/mysql'
+require 'jdbc/postgres'
 require "sequel"
 require "sequel/adapters/jdbc"
 
@@ -10,13 +10,13 @@ module LogStash module Filters
   end
 
   describe JdbcStreaming, :integration => true do
-    # Use MySql for integration tests
-    ::Jdbc::MySQL.load_driver
+    # Use MariaDB for integration tests
+    ::Jdbc::Postgres.load_driver
 
     ENV["TZ"] = "Etc/UTC"
     let(:mixin_settings) do
-      { "jdbc_user" => "root", "jdbc_driver_class" => "com.mysql.jdbc.Driver",
-        "jdbc_connection_string" => "jdbc:mysql://localhost/jdbc_streaming_db?user=root"}
+      { "jdbc_user" => "postgres", "jdbc_driver_class" => "org.postgresql.Driver",
+        "jdbc_connection_string" => "jdbc:postgresql://localhost/jdbc_streaming_db?user=postgres"}
     end
     let(:settings) { {} }
     let(:plugin) { JdbcStreaming.new(mixin_settings.merge(settings)) }
