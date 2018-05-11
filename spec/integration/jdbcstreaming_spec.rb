@@ -10,7 +10,7 @@ module LogStash module Filters
   end
 
   describe JdbcStreaming, :integration => true do
-    # Use MariaDB for integration tests
+    # Use Postgres for integration tests
     ::Jdbc::Postgres.load_driver
 
     ENV["TZ"] = "Etc/UTC"
