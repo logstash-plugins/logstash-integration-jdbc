@@ -16,7 +16,7 @@ module LogStash module Filters module Jdbc
       end
       schema_gen = db.create_table_generator()
       @columns.each {|col| schema_gen.column(col.name, col.datatype)}
-      schema_gen.index(@index_columns)
+      schema_gen.index(@index_columns) unless @index_columns.empty?
       options = {:generator => schema_gen}
       if @preserve_existing
         db.create_table?(@name, options)

@@ -6,7 +6,7 @@ require "sequel/adapters/jdbc"
 require "stud/temporary"
 require "timecop"
 
-LogStash::Logging::Logger::configure_logging("ERROR")
+# LogStash::Logging::Logger::configure_logging("WARN")
 
 module LogStash module Filters
   describe JdbcStatic do
@@ -121,6 +121,19 @@ module LogStash module Filters
           plugin.register
           plugin.filter(event)
           expect(event.get("server")).to eq([{"ip"=>ipaddr, "name"=>"server-254-255", "location"=>"MV-10-254-255"}])
+        end
+      end
+
+      context "under normal conditions when index_columns is not specified" do
+        let(:local_db_objects) do
+          [
+            {"name" => "servers", "columns" => [["ip", "varchar(64)"], ["name", "varchar(64)"], ["location", "varchar(64)"]]},
+          ]
+        end
+        it "enhances an event" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-serv'r-1", "location"=>"MV-9-6-4"}])
         end
       end
     end
