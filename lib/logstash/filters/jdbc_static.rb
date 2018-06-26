@@ -151,7 +151,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     filter_matched(event) if enhancement_states.all?
   end
 
-  def stop
+  def close
     @scheduler.stop if @scheduler
     @parsed_loaders.each(&:close)
     @processor.close

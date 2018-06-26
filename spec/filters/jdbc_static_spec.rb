@@ -85,7 +85,7 @@ module LogStash module Filters
     let(:ipaddr) { ".3.1.1" }
 
     describe "non scheduled operation" do
-      after { plugin.stop }
+      after { plugin.close }
 
       context "under normal conditions" do
         it "enhances an event" do
@@ -151,7 +151,7 @@ module LogStash module Filters
           sleep 3
           static_filter.filter(event)
           expect(static_filter.loader_runner.reload_count).to be > 1
-          static_filter.stop
+          static_filter.close
           Timecop.return
           expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-serv'r-1", "location"=>"MV-9-6-4"}])
         end
