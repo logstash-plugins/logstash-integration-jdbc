@@ -1,3 +1,7 @@
+## 1.0.4
+ - Fixed pipeline reload thread leak by implementing the correct close method to release resources [#34](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/34)
+ - Fixed error caused by code removed in latest version of Rufus scheduler by pinning dependency [#34](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/34)
+
 ## 1.0.3
  - Fix [jdbc_static filter - #25](https://github.com/logstash-plugins/logstash-filter-jdbc_static/issues/25) When index_columns is not specified, the create table statement has a syntax error.
 
