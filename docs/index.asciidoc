@@ -54,7 +54,7 @@ database connection.
 *lookups*::
 
 Perform lookup queries on the local database to enrich the events.
-Define as many lookups as needed to enhance the event from all
+Define as many lookups as needed to enrich the event from all
 lookup tables in one pass. Ideally the SQL statement should only
 return one row. Any rows are converted to Hash objects and are
 stored in a target field that is an Array.
@@ -521,7 +521,7 @@ must read the important multiple pipeline notice at the top of the page.
   * Default value is `[]`
 
 The array should contain one or more Hashes. Each Hash represents a lookup
-enhancement. Each Hash is validated according to the table below.
+enrichment. Each Hash is validated according to the table below.
 
 [cols="<,<,<",options="header",]
 |=======================================================================
