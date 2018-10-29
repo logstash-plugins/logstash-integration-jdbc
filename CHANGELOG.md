@@ -1,3 +1,6 @@
+## 1.0.6
+ - Added info to documentation to emphasize significance of table order [36](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/36)
+
 ## 1.0.5
  - Fixed issue where overly restrictive dependency on rufus scheduler was stopping Logstash from upgrading this plugin. [35](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/35)
 

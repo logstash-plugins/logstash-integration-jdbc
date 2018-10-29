@@ -58,7 +58,7 @@ Define as many lookups as needed to enrich the event from all
 lookup tables in one pass. Ideally the SQL statement should only
 return one row. Any rows are converted to Hash objects and are
 stored in a target field that is an Array.
-
++
 The following example config fetches data from a remote database, caches it in a
 local database, and uses lookups to enrich events with data cached in the local
 database.
@@ -131,7 +131,8 @@ filter {
 locally.
 <2> Defines the columns, types, and indexes used to build the local database
 structure. The column names and types should match the external database.
-The order of table definitions is significant and should match that of the loader queries - see <<Loader_column_and_local_db_object_order_dependency>>.
+The order of table definitions is significant and should match that of the loader queries.
+See <<plugins-{type}s-{plugin}-object_order>>.
 <3> Performs lookup queries on the local database to enrich the events.
 <4> Specifies the event field that will store the looked-up data. If the lookup
 returns multiple columns, the data is stored as a JSON object within the field.
@@ -247,7 +248,7 @@ However, after setting up the filter, you should watch the lookup results and
 view the logs to verify correct operation.
 ===============================
 
-[id="Loader_column_and_local_db_object_order_dependency"]
+[id="plugins-{type}s-{plugin}-object_order"]
 ==== Loader column and local_db_object order dependency
 
 [IMPORTANT]
