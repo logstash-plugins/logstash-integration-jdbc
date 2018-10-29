@@ -131,6 +131,7 @@ filter {
 locally.
 <2> Defines the columns, types, and indexes used to build the local database
 structure. The column names and types should match the external database.
+The order of table definitions is significant and should match that of the loader queries - see <<Loader_column_and_local_db_object_order_dependency>>.
 <3> Performs lookup queries on the local database to enrich the events.
 <4> Specifies the event field that will store the looked-up data. If the lookup
 returns multiple columns, the data is stored as a JSON object within the field.
@@ -245,6 +246,19 @@ whether the plugins are defined in a single pipeline, or multiple pipelines.
 However, after setting up the filter, you should watch the lookup results and
 view the logs to verify correct operation.
 ===============================
+
+[id="Loader_column_and_local_db_object_order_dependency"]
+==== Loader column and local_db_object order dependency
+
+[IMPORTANT]
+===============================
+For loader performance reasons, the loading mechanism uses a CSV style file with an inbuilt
+Derby file import procedure to add the remote data to the local db. The retrieved columns
+are written to the CSV file as is and the file import procedure expects a 1 to 1 correspondence
+to the order of the columns specified in the local_db_object settings. Please ensure that this
+order is in place.
+===============================
+
 
 [id="plugins-{type}s-{plugin}-options"]
 ==== Jdbc_static Filter Configuration Options
