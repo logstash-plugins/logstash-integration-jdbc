@@ -4,7 +4,9 @@ language: ruby
 cache: bundler
 services:
 - postgresql
-before_install: gem install bundler -v '< 2'
+before_install: 
+- psql -c 'create database jdbc_streaming_db;' -U postgres
+- gem install bundler -v '< 2'
 matrix:
   include:
   - rvm: jruby-9.1.13.0
