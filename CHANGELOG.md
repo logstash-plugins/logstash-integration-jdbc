@@ -1,3 +1,6 @@
+## 1.0.6
+  - Fixes connection leak in pipeline reloads by properly disconnecting on plugin close
+
 ## 1.0.5
    - [#11](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/11) Swap out mysql for postgresql for testing
 

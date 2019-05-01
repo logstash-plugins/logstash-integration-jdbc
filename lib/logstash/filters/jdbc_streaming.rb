@@ -131,6 +131,12 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
     end
   end
 
+  def close
+    @database.disconnect
+  rescue => e
+    logger.warn("Exception caught when attempting to close filter.", :exception => e.message, :backtrace => e.backtrace)
+  end
+
   # ----------------------------------------
   private
 
