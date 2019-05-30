@@ -1,3 +1,6 @@
+## 1.0.7
+  - Fixed formatting in documentation [#17](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/17) and [#28](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/28) 
+
 ## 1.0.6
   - Fixes connection leak in pipeline reloads by properly disconnecting on plugin close
 
