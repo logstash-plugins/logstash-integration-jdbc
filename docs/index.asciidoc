@@ -79,7 +79,7 @@ filter plugins.
   * Default value is `5.0`
 
 The minimum number of seconds any entry should remain in the cache, defaults to 5 seconds
-A numeric value, you can use decimals for example `{ "cache_expiration" => 0.25 }`
+A numeric value, you can use decimals for example `cache_expiration => 0.25`
 If there are transient jdbc errors the cache will store empty results for a given
 parameter set and bypass the jbdc lookup, this merges the default_hash into the event, until
 the cache entry expires, then the jdbc lookup will be tried again for the same parameters
