@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/config/mixin"
+require_relative "wrapped_driver"
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
@@ -38,16 +39,39 @@ module LogStash module PluginMixins module JdbcStreaming
     config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 
+  private
+
+  def load_drivers
+    return if @jdbc_driver_library.nil? || @jdbc_driver_library.empty?
+    driver_jars = @jdbc_driver_library.split(",")
+
+    # Needed for JDK 11 as the DriverManager has a different ClassLoader than Logstash
+    urls = java.net.URL[driver_jars.length].new
+    driver_jars.each_with_index do |driver, idx|
+        urls[idx] = java.io.File.new(driver).toURI().toURL()
+      end
+      ucl = java.net.URLClassLoader.new_instance(urls)
+      begin
+        klass = java.lang.Class.forName(@jdbc_driver_class.to_java(:string), true, ucl);
+      rescue Java::JavaLang::ClassNotFoundException => e
+        raise LogStash::Error, "Unable to find driver class via URLClassLoader in given driver jars: #{@jdbc_driver_class}"
+      end
+      begin
+        driver = klass.getConstructor().newInstance();
+        java.sql.DriverManager.register_driver(WrappedDriver.new(driver.to_java(java.sql.Driver)).to_java(java.sql.Driver))
+      rescue Java::JavaSql::SQLException => e
+        raise LogStash::Error, "Unable to register driver with java.sql.DriverManager using WrappedDriver: #{@jdbc_driver_class}"
+      end
+
+  end
+
   public
   def prepare_jdbc_connection
     require "sequel"
     require "sequel/adapters/jdbc"
     require "java"
 
-    if @jdbc_driver_library
-      class_loader = java.lang.ClassLoader.getSystemClassLoader().to_java(java.net.URLClassLoader)
-      class_loader.add_url(java.io.File.new(@jdbc_driver_library).toURI().toURL())
-    end
+    load_drivers
 
     Sequel::JDBC.load_driver(@jdbc_driver_class)
     @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)

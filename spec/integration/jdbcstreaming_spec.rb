@@ -14,13 +14,18 @@ module LogStash module Filters
     ::Jdbc::Postgres.load_driver
 
     ENV["TZ"] = "Etc/UTC"
+
+    # For Travis and CI based on docker, we source from ENV
+    jdbc_connection_string = ENV.fetch("PG_CONNECTION_STRING",
+      "jdbc:postgresql://localhost:5432") + "/jdbc_streaming_db?user=postgres"
+
     let(:mixin_settings) do
-      { "jdbc_user" => "postgres", "jdbc_driver_class" => "org.postgresql.Driver",
-        "jdbc_connection_string" => "jdbc:postgresql://localhost/jdbc_streaming_db?user=postgres"}
+      { "jdbc_driver_class" => "org.postgresql.Driver",
+        "jdbc_connection_string" => jdbc_connection_string
+      }
     end
-    let(:settings) { {} }
     let(:plugin) { JdbcStreaming.new(mixin_settings.merge(settings)) }
-    let (:db) do
+    let(:db) do
       ::Sequel.connect(mixin_settings['jdbc_connection_string'])
     end
     let(:event)      { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
