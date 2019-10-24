@@ -1,10 +1,27 @@
 # encoding: utf-8
 require "logstash/config/mixin"
-require_relative "wrapped_driver"
+require_relative "jdbc_streaming/wrapped_driver"
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
 module LogStash module PluginMixins module JdbcStreaming
+  class RowCache
+    def initialize(size, ttl)
+      @cache = ::LruRedux::TTL::ThreadSafeCache.new(size, ttl)
+    end
+
+    def get(parameters)
+      @cache.getset(parameters) { yield }
+    end
+  end
+
+  class NoCache
+    def initialize(size, ttl) end
+
+    def get(statement)
+      yield
+    end
+  end
 
   # This method is called when someone includes this module
   def self.included(base)
@@ -73,8 +90,12 @@ module LogStash module PluginMixins module JdbcStreaming
 
     load_drivers
 
+    @sequel_opts_symbols = @sequel_opts.inject({}) {|hash, (k,v)| hash[k.to_sym] = v; hash}
+    @sequel_opts_symbols[:user] = @jdbc_user unless @jdbc_user.nil? || @jdbc_user.empty?
+    @sequel_opts_symbols[:password] = @jdbc_password.value unless @jdbc_password.nil?
+
     Sequel::JDBC.load_driver(@jdbc_driver_class)
-    @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)
+    @database = Sequel.connect(@jdbc_connection_string, @sequel_opts_symbols)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
       @database.pool.connection_validation_timeout = @jdbc_validation_timeout

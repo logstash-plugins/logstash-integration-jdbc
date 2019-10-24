@@ -1,3 +1,7 @@
+## 1.0.9
+  - Added support for prepared statements [PR 32](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/32)
+  - Added support for `sequel_opts` to pass options to the 3rd party Sequel library.
+
 ## 1.0.8
   - Added support for driver loading in JDK 9+ [Issue 25](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/issues/25)
   - Added support for multiple driver jars [Issue #21](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/issues/21)

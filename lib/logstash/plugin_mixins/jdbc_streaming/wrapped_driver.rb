@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-module LogStash module PluginMixins module Jdbc
+module LogStash module PluginMixins module JdbcStreaming
   class WrappedDriver
     java_implements java.sql.Driver
 

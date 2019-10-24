@@ -2,6 +2,9 @@
 require "logstash/filters/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc_streaming"
+require "logstash/plugin_mixins/jdbc_streaming/cache_payload"
+require "logstash/plugin_mixins/jdbc_streaming/statement_handler"
+require "logstash/plugin_mixins/jdbc_streaming/parameter_handler"
 require "lru_redux"
 
 # This filter executes a SQL query and store the result set in the field
@@ -24,49 +27,25 @@ require "lru_redux"
 #   }
 # }
 #
+# Prepared Statement Mode example
+#
+# [source,ruby]
+# filter {
+#   jdbc_streaming {
+#     jdbc_driver_library => "/path/to/mysql-connector-java-5.1.34-bin.jar"
+#     jdbc_driver_class => "com.mysql.jdbc.Driver"
+#     jdbc_connection_string => ""jdbc:mysql://localhost:3306/mydatabase"
+#     jdbc_user => "me"
+#     jdbc_password => "secret"
+#     statement => "select * from WORLD.COUNTRY WHERE Code = ?"
+#     use_prepared_statements => true
+#     prepared_statement_name => "get_country_from_code"
+#     prepared_statement_bind_values => ["[country_code]"]
+#     target => "country_details"
+#   }
+# }
+#
 module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
-  class CachePayload
-    attr_reader :payload
-    def initialize
-      @failure = false
-      @payload = []
-    end
-
-    def push(data)
-      @payload << data
-    end
-
-    def failed!
-      @failure = true
-    end
-
-    def failed?
-      @failure
-    end
-
-    def empty?
-      @payload.empty?
-    end
-  end
-
-  class RowCache
-    def initialize(size, ttl)
-      @cache = ::LruRedux::TTL::ThreadSafeCache.new(size, ttl)
-    end
-
-    def get(parameters)
-      @cache.getset(parameters) { yield }
-    end
-  end
-
-  class NoCache
-    def initialize(size, ttl) end
-
-    def get(statement)
-      yield
-    end
-  end
-
   include LogStash::PluginMixins::JdbcStreaming
 
   config_name "jdbc_streaming"
@@ -108,16 +87,41 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
   # The least recently used entry will be evicted
   config :cache_size, :validate => :number, :default => 500
 
+  config :use_prepared_statements, :validate => :boolean, :default => false
+  config :prepared_statement_name, :validate => :string, :default => ""
+  config :prepared_statement_bind_values, :validate => :array, :default => []
+  config :prepared_statement_warn_on_constant_usage, :validate => :boolean, :default => true # deprecate in a future major LS release
+
+  # Options hash to pass to Sequel
+  config :sequel_opts, :validate => :hash, :default => {}
+
+  attr_reader :prepared_statement_constant_warned # for test verification, remove when warning is deprecated and removed
+
   # ----------------------------------------
   public
 
   def register
     convert_config_options
-    prepare_connected_jdbc_cache
+    if @use_prepared_statements
+      validation_errors = validate_prepared_statement_mode
+      unless validation_errors.empty?
+        raise(LogStash::ConfigurationError, "Prepared Statement Mode validation errors: " + validation_errors.join(", "))
+      end
+    else
+      # symbolise and wrap value in parameter handler
+      unless @parameters.values.all?{|v| v.is_a?(PluginMixins::JdbcStreaming::ParameterHandler)}
+        @parameters = parameters.inject({}) do |hash,(k,value)|
+          hash[k.to_sym] = PluginMixins::JdbcStreaming::ParameterHandler.build_parameter_handler(value)
+          hash
+        end
+      end
+    end
+    @statement_handler = LogStash::PluginMixins::JdbcStreaming::StatementHandler.build_statement_handler(self)
+    prepare_jdbc_connection
   end
 
   def filter(event)
-    result = cache_lookup(event) # should return a JdbcCachePayload
+    result = @statement_handler.cache_lookup(@database, event) # should return a CachePayload instance
 
     if result.failed?
       tag_failure(event)
@@ -140,35 +144,6 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
   # ----------------------------------------
   private
 
-  def cache_lookup(event)
-    params = prepare_parameters_from_event(event)
-    @cache.get(params) do
-      result = CachePayload.new
-      begin
-        query = @database[@statement, params] # returns a dataset
-        @logger.debug? && @logger.debug("Executing JDBC query", :statement => @statement, :parameters => params)
-        query.all do |row|
-          result.push row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
-        end
-      rescue ::Sequel::Error => e
-        # all sequel errors are a subclass of this, let all other standard or runtime errors bubble up
-        result.failed!
-        @logger.warn? && @logger.warn("Exception when executing JDBC query", :exception => e)
-      end
-      # if either of: no records or a Sequel exception occurs the payload is
-      # empty and the default can be substituted later.
-      result
-    end
-  end
-
-  def prepare_parameters_from_event(event)
-    @symbol_parameters.inject({}) do |hash,(k,v)|
-      value = event.get(event.sprintf(v))
-      hash[k] = value.is_a?(::LogStash::Timestamp) ? value.time : value
-      hash
-    end
-  end
-
   def tag_failure(event)
     @tag_on_failure.each do |tag|
       event.tag(tag)
@@ -190,13 +165,32 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
   def convert_config_options
     # create these object once they will be cloned for every filter call anyway,
     # lets not create a new object for each
-    @symbol_parameters = @parameters.inject({}) {|hash,(k,v)| hash[k.to_sym] = v ; hash }
     @default_array = [@default_hash]
   end
 
-  def prepare_connected_jdbc_cache
-    klass = @use_cache ? RowCache : NoCache
-    @cache = klass.new(@cache_size, @cache_expiration)
-    prepare_jdbc_connection
+  def validate_prepared_statement_mode
+    @prepared_statement_constant_warned = false
+    error_messages = []
+    if @prepared_statement_name.empty?
+      error_messages << "must provide a name for the Prepared Statement, it must be unique for the db session"
+    end
+    if @statement.count("?") != @prepared_statement_bind_values.size
+      # mismatch in number of bind value elements to placeholder characters
+      error_messages << "there is a mismatch between the number of statement `?` placeholders and :prepared_statement_bind_values array setting elements"
+    end
+    unless @prepared_statement_bind_values.all?{|v| v.is_a?(PluginMixins::JdbcStreaming::ParameterHandler)}
+      @prepared_statement_bind_values = prepared_statement_bind_values.map do |value|
+        ParameterHandler.build_bind_value_handler(value)
+      end
+    end
+    if prepared_statement_warn_on_constant_usage
+      warnables = @prepared_statement_bind_values.select {|handler| handler.is_a?(PluginMixins::JdbcStreaming::ConstantParameter) && handler.given_value.is_a?(String)}
+      unless warnables.empty?
+        @prepared_statement_constant_warned = true
+        msg = "When using prepared statements, the following `prepared_statement_bind_values` will be treated as constants, if you intend them to be field references please use the square bracket field reference syntax e.g. '[field]'"
+        logger.warn(msg, :constants => warnables)
+      end
+    end
+    error_messages
   end
-end end end # class LogStash::Filters::Jdbc
+end end end # class LogStash::Filters::JdbcStreaming

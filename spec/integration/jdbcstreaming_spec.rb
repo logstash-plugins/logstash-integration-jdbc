@@ -43,7 +43,8 @@ module LogStash module Filters
         "cache_size" => cache_size,
         "tag_on_failure" => ["lookup_failed"],
         "tag_on_default_use" => ["default_used_instead"],
-        "default_hash" => {"name" => "unknown", "location" => "unknown"}
+        "default_hash" => {"name" => "unknown", "location" => "unknown"},
+        "sequel_opts" => {"pool_timeout" => 600}
       }
     end
     let(:ipaddr)    { "10.#{idx}.1.1" }
@@ -65,6 +66,32 @@ module LogStash module Filters
     describe "found record - uses row" do
       let(:idx) { 200 }
 
+      it "fills in the target" do
+        plugin.filter(event)
+        expect(event.get("server")).to eq([{"name" => "ldn-server-#{idx}", "location" => "LDN-#{idx}-2-3"}])
+        expect((event.get("tags") || []) & ["lookup_failed", "default_used_instead"]).to be_empty
+      end
+    end
+
+    describe "In Prepared Statement mode, found record - uses row" do
+      let(:idx) { 200 }
+      let(:statement) { "SELECT name, location FROM reference_table WHERE ip = ?" }
+      let(:settings) do
+        {
+          "statement" => statement,
+          "use_prepared_statements" => true,
+          "prepared_statement_name" => "lookup_ip",
+          "prepared_statement_bind_values" => ["[ip]"],
+          "target" => "server",
+          "use_cache" => use_cache,
+          "cache_expiration" => cache_expiration,
+          "cache_size" => cache_size,
+          "tag_on_failure" => ["lookup_failed"],
+          "tag_on_default_use" => ["default_used_instead"],
+          "default_hash" => {"name" => "unknown", "location" => "unknown"},
+          "sequel_opts" => {"pool_timeout" => 600}
+        }
+      end
       it "fills in the target" do
         plugin.filter(event)
         expect(event.get("server")).to eq([{"name" => "ldn-server-#{idx}", "location" => "LDN-#{idx}-2-3"}])
