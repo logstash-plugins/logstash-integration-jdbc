@@ -25,5 +25,4 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'jdbc-derby'
-  s.add_development_dependency 'jdbc-postgres'
 end

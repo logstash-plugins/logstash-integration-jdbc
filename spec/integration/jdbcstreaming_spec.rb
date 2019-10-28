@@ -1,6 +1,5 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/filters/jdbc_streaming"
-require 'jdbc/postgres'
 require "sequel"
 require "sequel/adapters/jdbc"
 
@@ -10,17 +9,15 @@ module LogStash module Filters
   end
 
   describe JdbcStreaming, :integration => true do
-    # Use Postgres for integration tests
-    ::Jdbc::Postgres.load_driver
-
     ENV["TZ"] = "Etc/UTC"
 
     # For Travis and CI based on docker, we source from ENV
     jdbc_connection_string = ENV.fetch("PG_CONNECTION_STRING",
-      "jdbc:postgresql://localhost:5432") + "/jdbc_streaming_db?user=postgres"
+      "jdbc:postgresql://postgresql:5432") + "/jdbc_streaming_db?user=postgres"
 
     let(:mixin_settings) do
       { "jdbc_driver_class" => "org.postgresql.Driver",
+        "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
         "jdbc_connection_string" => jdbc_connection_string
       }
     end
@@ -50,18 +47,8 @@ module LogStash module Filters
     let(:ipaddr)    { "10.#{idx}.1.1" }
 
     before :each do
-      db.create_table :reference_table do
-        String :ip
-        String  :name
-        String  :location
-      end
-      1.upto(250) do |i|
-        db[:reference_table].insert(:ip => "10.#{i}.1.1", :name => "ldn-server-#{i}", :location => "LDN-#{i}-2-3")
-      end
       plugin.register
     end
-
-    after(:each) { db.drop_table(:reference_table) }
 
     describe "found record - uses row" do
       let(:idx) { 200 }
