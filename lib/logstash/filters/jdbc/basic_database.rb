@@ -85,9 +85,8 @@ module LogStash module Filters module Jdbc
     def verify_connection(connection_string, driver_class, driver_library, user, password)
       begin
         if driver_library
-          class_loader = java.lang.ClassLoader.getSystemClassLoader().to_java(java.net.URLClassLoader)
           driver_library.split(",").each do |driver_path|
-            make_driver_path_loadable(class_loader, driver_path.strip)
+            require driver_path
           end
         end
       rescue LoadError => e
@@ -113,11 +112,6 @@ module LogStash module Filters module Jdbc
       ensure
         db.disconnect unless db.nil?
       end
-    end
-
-    def make_driver_path_loadable(class_loader, driver_path)
-      # so we can set an expectation in rspec
-      class_loader.add_url(java.io.File.new(driver_path).toURI().toURL())
     end
 
     def post_initialize()

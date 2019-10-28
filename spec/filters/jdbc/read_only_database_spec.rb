@@ -38,29 +38,6 @@ module LogStash module Filters module Jdbc
         end
       end
 
-      describe "multiple driver loading" do
-        before :each do
-          allow(Sequel::JDBC).to receive(:load_driver)
-          allow_any_instance_of(described_class).to receive(:make_driver_path_loadable)
-        end
-
-        context "using three drivers" do
-          it "makes all loadable" do
-            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/bar.jar")
-            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/baz.jar")
-            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).with(anything, "/foo/biz.jar")
-            described_class.create("mock://mydb", "a driver class", "/foo/bar.jar, /foo/baz.jar, /foo/biz.jar")
-          end
-        end
-
-        context "just one driver" do
-          it "makes one loadable" do
-            expect_any_instance_of(described_class).to receive(:make_driver_path_loadable).once.with(anything, "/foo/bar.jar")
-            described_class.create("mock://mydb", "a driver class", "/foo/bar.jar")
-          end
-        end
-      end
-
       describe "methods" do
         let(:dataset) { double("Sequel::Dataset") }
 
