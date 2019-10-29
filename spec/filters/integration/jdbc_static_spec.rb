@@ -103,7 +103,7 @@ module LogStash module Filters
           settings["loader_schedule"] = "*/10 * * * * * UTC"
           Timecop.travel(Time.now.utc - 3600)
           Timecop.scale(60)
-          static_filter = JdbcStatic.new(mixin_settings.merge(settings))
+          static_filter = JdbcStatic.new(settings)
           runner = Thread.new(static_filter) do |filter|
             filter.register
           end

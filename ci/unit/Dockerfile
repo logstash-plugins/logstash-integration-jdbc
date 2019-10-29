@@ -10,3 +10,5 @@ RUN gem install bundler -v '< 2'
 WORKDIR /usr/share/plugins/plugin
 RUN bundle install
 COPY --chown=logstash:logstash . /usr/share/plugins/plugin
+RUN bundle exec rake vendor
+
