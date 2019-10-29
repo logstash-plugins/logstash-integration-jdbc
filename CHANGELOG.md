@@ -1,3 +1,6 @@
+## 1.0.10
+  - Fixed driver loading [#35](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/35)
+
 ## 1.0.9
   - Added support for prepared statements [PR 32](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming/pull/32)
   - Added support for `sequel_opts` to pass options to the 3rd party Sequel library.
