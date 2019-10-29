@@ -1,3 +1,6 @@
+## 1.0.7
+ - Fixed issue with driver verification using Java 11 [#51](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/51)
+
 ## 1.0.6
  - Added info to documentation to emphasize significance of table order [36](https://github.com/logstash-plugins/logstash-filter-jdbc_static/pull/36)
 
