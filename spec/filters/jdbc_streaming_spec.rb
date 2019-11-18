@@ -10,6 +10,7 @@ module LogStash module Filters
   end
 
   describe JdbcStreaming do
+    let!(:jdbc_connection_string) { "jdbc:derby:memory:jdbc_streaming_testdb;create=true"}
     #Use embedded Derby for tests
     ::Jdbc::Derby.load_driver
 
@@ -17,7 +18,7 @@ module LogStash module Filters
     describe "plugin level execution" do
       let(:mixin_settings) do
         { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
-          "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
+          "jdbc_connection_string" => jdbc_connection_string}
       end
       let(:plugin) { JdbcStreaming.new(mixin_settings.merge(settings)) }
       let (:db) do
@@ -249,7 +250,7 @@ module LogStash module Filters
         filter {
           jdbc_streaming {
             jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver"
-            jdbc_connection_string => "jdbc:derby:memory:testdb;create=true"
+            jdbc_connection_string => "#{jdbc_connection_string}"
             statement => "SELECT 'from_database' FROM SYSIBM.SYSDUMMY1"
             target => "new_field"
           }
@@ -267,7 +268,7 @@ module LogStash module Filters
         filter {
           jdbc_streaming {
             jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver"
-            jdbc_connection_string => "jdbc:derby:memory:testdb;create=true"
+            jdbc_connection_string => "#{jdbc_connection_string}"
             statement => "SELECT 'from_database' as col_1 FROM SYSIBM.SYSDUMMY1"
             target => "new_field"
           }
@@ -285,7 +286,7 @@ module LogStash module Filters
         filter {
           jdbc_streaming {
             jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver"
-            jdbc_connection_string => "jdbc:derby:memory:testdb;create=true"
+            jdbc_connection_string => "#{jdbc_connection_string}"
             statement => "SELECT 'from_database' FROM SYSIBM.SYSDUMMY1 WHERE '1' = :param"
             parameters => { "param" => "param_field"}
             target => "new_field"
@@ -308,7 +309,7 @@ module LogStash module Filters
         filter {
           jdbc_streaming {
             jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver"
-            jdbc_connection_string => "jdbc:derby:memory:testdb;create=true"
+            jdbc_connection_string => "#{jdbc_connection_string}"
             statement => "SELECT 'from_database' FROM SYSIBM.SYSDUMMY1 WHERE 1 = :param"
             parameters => { "param" => "param_field"}
             target => "new_field"
@@ -331,7 +332,7 @@ module LogStash module Filters
         filter {
           jdbc_streaming {
             jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver"
-            jdbc_connection_string => "jdbc:derby:memory:testdb;create=true"
+            jdbc_connection_string => "#{jdbc_connection_string}"
             statement => "SELECT 'from_database' FROM SYSIBM.SYSDUMMY1 WHERE {fn TIMESTAMPDIFF( SQL_TSI_DAY, {t :param}, current_timestamp)} = 0"
             parameters => { "param" => "@timestamp"}
             target => "new_field"

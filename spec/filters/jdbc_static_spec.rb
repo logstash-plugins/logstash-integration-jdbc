@@ -16,7 +16,8 @@ module LogStash module Filters
       Thread.abort_on_exception = true
     end
 
-    let(:db1) { ::Sequel.connect("jdbc:derby:memory:testdb;create=true", :user=> nil, :password=> nil) }
+    let(:jdbc_connection_string) { "jdbc:derby:memory:jdbc_static_testdb;create=true" }
+    let(:db1) { ::Sequel.connect(jdbc_connection_string, :user=> nil, :password=> nil) }
     let(:loader_statement) { "SELECT ip, name, location FROM reference_table" }
     let(:lookup_statement) { "SELECT * FROM servers WHERE ip LIKE :ip" }
     let(:parameters_rhs) { "%%{[ip]}" }
@@ -51,7 +52,7 @@ module LogStash module Filters
 
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
-        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true",
+        "jdbc_connection_string" => "#{jdbc_connection_string}",
         "staging_directory" => temp_import_path_plugin
       }
     end
