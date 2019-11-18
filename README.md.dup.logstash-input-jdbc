@@ -1,6 +1,4 @@
-# Logstash Plugin
-
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc.svg)](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc)
+# Logstash JDBC Input Plugin
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
@@ -24,7 +22,7 @@ Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/log
 #### Code
 - To get started, you'll need JRuby with the Bundler gem installed.
 
-- Create a new plugin or clone and existing from the GitHub [logstash-plugins](https://github.com/logstash-plugins) organization. We also provide [example plugins](https://github.com/logstash-plugins?query=example).
+- Create a new plugin or clone and existing from the GitHub [logstash-plugins](https://github.com/logstash-plugins) organization.
 
 - Install dependencies
 ```sh
@@ -33,15 +31,26 @@ bundle install
 
 #### Test
 
-- Update your dependencies
+```sh
+bundle exec rspec
+```
+
+The Logstash code required to run the tests/specs is specified in the `Gemfile` by the line similar to:
+```ruby
+gem "logstash", :github => "elasticsearch/logstash", :branch => "1.5"
+```
+To test against another version or a local Logstash, edit the `Gemfile` to specify an alternative location, for example:
+```ruby
+gem "logstash", :github => "elasticsearch/logstash", :ref => "master"
+```
+```ruby
+gem "logstash", :path => "/your/local/logstash"
+```
+
+Then update your dependencies and run your tests:
 
 ```sh
 bundle install
-```
-
-- Run unit tests
-
-```sh
 bundle exec rspec
 ```
 
@@ -49,43 +58,63 @@ bundle exec rspec
 
 #### 2.1 Run in a local Logstash clone
 
-- Edit Logstash `Gemfile` and add the local plugin path, for example:
+- Edit Logstash `tools/Gemfile` and add the local plugin path, for example:
 ```ruby
-gem "logstash-filter-awesome", :path => "/your/local/logstash-filter-awesome"
+gem "logstash-input-jdbc", :path => "/your/local/logstash-input-jdbc"
 ```
-- Install plugin
+- Update Logstash dependencies
 ```sh
-# Logstash 2.3 and higher
-bin/logstash-plugin install --no-verify
-
-# Prior to Logstash 2.3
-bin/plugin install --no-verify
-
+rake vendor:gems
 ```
 - Run Logstash with your plugin
 ```sh
-bin/logstash -e 'filter {awesome {}}'
+bin/logstash -e 'input {jdbc {..}}'
 ```
 At this point any modifications to the plugin code will be applied to this local Logstash setup. After modifying the plugin, simply rerun Logstash.
 
 #### 2.2 Run in an installed Logstash
 
-You can use the same **2.1** method to run your plugin in an installed Logstash by editing its `Gemfile` and pointing the `:path` to your local plugin development directory or you can build the gem and install it using:
-
 - Build your plugin gem
 ```sh
-gem build logstash-filter-awesome.gemspec
+gem build logstash-input-jdbc.gemspec
 ```
 - Install the plugin from the Logstash home
 ```sh
-# Logstash 2.3 and higher
-bin/logstash-plugin install --no-verify
-
-# Prior to Logstash 2.3
-bin/plugin install --no-verify
-
+bin/plugin install /your/local/plugin/logstash-input-jdbc.gem
 ```
 - Start Logstash and proceed to test the plugin
+
+## Example configuration
+
+Reading data from MySQL:  
+
+	input {
+	  jdbc {
+	    jdbc_driver_library => "/path/to/mysql-connector-java-5.1.33-bin.jar"
+	    jdbc_driver_class => "com.mysql.jdbc.Driver"
+	    jdbc_connection_string => "jdbc:mysql://host:port/database"
+	    jdbc_user => "user"
+	    jdbc_password => "password"
+      # or jdbc_password_filepath => "/path/to/my/password_file"
+	    statement => "SELECT ..."
+	    jdbc_paging_enabled => "true"
+	    jdbc_page_size => "50000"
+	  }
+	}
+
+	filter {
+	  [some filters here]
+	}
+
+	output {
+	  stdout {
+	    codec => rubydebug
+	  }
+	  elasticsearch_http {
+	    host => "host"
+	    index => "myindex"
+	  }
+	}
 
 ## Contributing
 
@@ -93,6 +122,6 @@ All contributions are welcome: ideas, patches, documentation, bug reports, compl
 
 Programming is not a required skill. Whatever you've seen about open source and maintainers or community members  saying "send patches or die" - you will not see that here.
 
-It is more important to the community that you are able to contribute.
+It is more important to me that you are able to contribute.
 
 For more information about contributing, see the [CONTRIBUTING](https://github.com/elastic/logstash/blob/master/CONTRIBUTING.md) file.

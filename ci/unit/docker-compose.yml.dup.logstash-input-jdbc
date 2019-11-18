@@ -14,7 +14,6 @@ services:
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
       LOGSTASH_SOURCE: 1
-      PG_CONNECTION_STRING: "jdbc:postgresql://postgresql:5432"
     tty: true
 
   postgresql:

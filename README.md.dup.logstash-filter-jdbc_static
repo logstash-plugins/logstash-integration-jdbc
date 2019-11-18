@@ -1,17 +1,13 @@
+# logstash-filter-jdbc_static
+Lookup plugin which overwrites a loader query's result set into a local in-memory db and then lookup queries add records to a target field using properties from the event. 
+
 # Logstash Plugin
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc.svg)](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc)
+[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc_static.svg)](https://travis-ci.org/logstash-plugins/logstash-filter-jdbc_static)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
-
-## Documentation
-
-Logstash provides infrastructure to automatically generate documentation for this plugin. We use the asciidoc format to write documentation so any comments in the source code will be first converted into asciidoc and then into html. All plugin documentation are placed under one [central location](http://www.elastic.co/guide/en/logstash/current/).
-
-- For formatting code or config example, you can use the asciidoc `[source,ruby]` directive
-- For more asciidoc formatting tips, see the excellent reference here https://github.com/elastic/docs#asciidoc-guide
 
 ## Need Help?
 
@@ -19,7 +15,7 @@ Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/log
 
 ## Developing
 
-### 1. Plugin Developement and Testing
+### 1. Plugin Development and Testing
 
 #### Code
 - To get started, you'll need JRuby with the Bundler gem installed.
@@ -39,7 +35,7 @@ bundle install
 bundle install
 ```
 
-- Run unit tests
+- Run tests
 
 ```sh
 bundle exec rspec
