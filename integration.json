@@ -1,0 +1,1 @@
+{"name":"logstash-integration-jdbc","plugins":["logstash-input-jdbc","logstash-filter-jdbc_streaming","logstash-filter-jdbc_static"]}
