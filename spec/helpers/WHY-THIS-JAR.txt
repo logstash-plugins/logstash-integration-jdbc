@@ -1,0 +1,4 @@
+The derbyrun.jar is used by spec/filters/jdbc_static_file_local_spec.rb via
+spec/filters/spec_helper
+The spec helper runs and shuts down a separate Derby server
+Have pity, its only little.
