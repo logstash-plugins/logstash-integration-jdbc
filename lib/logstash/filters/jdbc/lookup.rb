@@ -63,6 +63,8 @@ module LogStash module Filters module Jdbc
       @valid = false
       @option_errors = []
       @default_result = nil
+      @prepared_statement = nil
+      @symbol_parameters = nil
       parse_options
     end
 
@@ -79,8 +81,11 @@ module LogStash module Filters module Jdbc
     end
 
     def enhance(local, event)
-      result = fetch(local, event) # should return a LookupResult
-
+      if @prepared_statement
+        result = call_prepared(local, event)
+      else
+        result = fetch(local, event) # should return a LookupResult
+      end
       if result.failed? || result.parameters_invalid?
         tag_failure(event)
       end
@@ -96,6 +101,17 @@ module LogStash module Filters module Jdbc
       else
         false
       end
+    end
+
+    def use_prepared_statement?
+      @prepared_parameters && !@prepared_parameters.empty?
+    end
+
+    def prepare(local)
+      hash = {}
+      @prepared_parameters.each_with_index { |v, i| hash[:"$p#{i}"] = v }
+      @prepared_param_placeholder_map = hash
+      @prepared_statement = local.prepare(query, hash.keys)
     end
 
     private
@@ -139,6 +155,33 @@ module LogStash module Filters module Jdbc
       result
     end
 
+    def call_prepared(local, event)
+      result = LookupResult.new()
+      if @parameters_specified
+        params = prepare_parameters_from_event(event, result)
+        if result.parameters_invalid?
+          logger.warn? && logger.warn("Parameter field not found in event", :lookup_id => @id, :invalid_parameters => result.invalid_parameters)
+          return result
+        end
+      else
+        params = {}
+      end
+      begin
+        logger.debug? && logger.debug("Executing Jdbc query", :lookup_id => @id, :statement => query, :parameters => params)
+        @prepared_statement.call(params).each do |row|
+          stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
+          result.push(stringified)
+        end
+      rescue ::Sequel::Error => e
+        # all sequel errors are a subclass of this, let all other standard or runtime errors bubble up
+        result.failed!
+        logger.warn? && logger.warn("Exception when executing Jdbc query", :lookup_id => @id, :exception => e.message, :backtrace => e.backtrace.take(8))
+      end
+      # if either of: no records or a Sequel exception occurs the payload is
+      # empty and the default can be substituted later.
+      result
+    end
+
     def process_event(event, result)
       # use deep clone here so other filter function don't taint the payload by reference
       event.set(@target, ::LogStash::Util.deep_clone(result.payload))
@@ -162,17 +205,34 @@ module LogStash module Filters module Jdbc
         @option_errors << "The options for '#{@id}' must include a 'query' string"
       end
 
-      @parameters = @options["parameters"]
-      @parameters_specified = false
-      if @parameters
-        if !@parameters.is_a?(Hash)
-          @option_errors << "The 'parameters' option for '#{@id}' must be a Hash"
-        else
-          # this is done once per lookup at start, i.e. Sprintfier.new et.al is done once.
-          @symbol_parameters = @parameters.inject({}) {|hash,(k,v)| hash[k.to_sym] = sprintf_or_get(v) ; hash }
-          # the user might specify an empty hash parameters => {}
-          # maybe due to an unparameterised query
-          @parameters_specified = !@symbol_parameters.empty?
+      if @options["parameters"] && @options["prepared_parameters"]
+        @option_errors << "Can't specify 'parameters' and 'prepared_parameters' in the same lookup"
+      else
+        @parameters = @options["parameters"]
+        @prepared_parameters = @options["prepared_parameters"]
+        @parameters_specified = false
+        if @parameters
+          if !@parameters.is_a?(Hash)
+            @option_errors << "The 'parameters' option for '#{@id}' must be a Hash"
+          else
+            # this is done once per lookup at start, i.e. Sprintfier.new et.al is done once.
+            @symbol_parameters = @parameters.inject({}) {|hash,(k,v)| hash[k.to_sym] = sprintf_or_get(v) ; hash }
+            # the user might specify an empty hash parameters => {}
+            # maybe due to an unparameterised query
+            @parameters_specified = !@symbol_parameters.empty?
+          end
+        elsif @prepared_parameters
+          if !@prepared_parameters.is_a?(Array)
+            @option_errors << "The 'prepared_parameters' option for '#{@id}' must be an Array"
+          elsif @query.count("?") != @prepared_parameters.size
+            @option_errors << "The 'prepared_parameters' option for '#{@id}' doesn't match count with query's placeholder"
+          else
+            #prepare the map @symbol_parameters :n => sprintf_or_get
+            hash = {}
+            @prepared_parameters.each_with_index {|v,i| hash[:"p#{i}"] = sprintf_or_get(v)}
+            @symbol_parameters = hash
+            @parameters_specified = !@prepared_parameters.empty?
+          end
         end
       end
 

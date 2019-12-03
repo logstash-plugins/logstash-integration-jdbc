@@ -38,6 +38,8 @@ module LogStash module Filters module Jdbc
           "lookup_jdbc_driver_class",
           "lookup_jdbc_driver_library").compact)
         @local.connect(CONNECTION_ERROR_MSG)
+
+        create_prepared_statements_for_lookups
       end
     end
 
@@ -59,6 +61,14 @@ module LogStash module Filters module Jdbc
     end
 
     private
+
+    def create_prepared_statements_for_lookups()
+      @lookups.each do |lookup|
+        if lookup.use_prepared_statement?
+          lookup.prepare(@local)
+        end
+      end
+    end
 
     def validate_lookups(lookups_errors = [])
       ids = Hash.new(0)

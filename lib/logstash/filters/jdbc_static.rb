@@ -60,13 +60,18 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   # For example:
   # local_lookups => [
   #   {
-  #     "query" => "select * from country WHERE code = :code",
+  #     "query" => "SELECT * FROM country WHERE code = :code",
   #     "parameters" => {"code" => "country_code"}
   #     "target" => "country_details"
   #   },
   #   {
-  #     "query" => "select ip, name from servers WHERE ip LIKE :ip",
+  #     "query" => "SELECT ip, name FROM servers WHERE ip LIKE :ip",
   #     "parameters" => {"ip" => "%{[response][ip]}%"}
+  #     "target" => "servers"
+  #   },
+  #   {
+  #     "query" => "SELECT ip, name FROM servers WHERE ip = ?",
+  #     "prepared_parameters" => ["from_ip"]
   #     "target" => "servers"
   #   }
   # ]
