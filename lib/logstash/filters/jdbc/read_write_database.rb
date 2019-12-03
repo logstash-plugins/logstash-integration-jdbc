@@ -27,6 +27,13 @@ module LogStash module Filters module Jdbc
       @rwlock.readLock().unlock()
     end
 
+    def prepare(statement, parameters)
+      @rwlock.readLock().lock()
+      @db[statement, parameters].prepare(:select, @id)
+    ensure
+      @rwlock.readLock().unlock()
+    end
+
     def build_db_object(db_object)
       begin
         @rwlock.writeLock().lock()

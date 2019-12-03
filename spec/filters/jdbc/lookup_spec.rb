@@ -44,6 +44,27 @@ module LogStash module Filters module Jdbc
           result = described_class.find_validation_errors([lookup_hash])
           expect(result).to eq("The 'parameters' option for 'lookup-1' must be a Hash")
         end
+
+        it "parameters and prepared_parameters are defined at same time" do
+          lookup_hash = {
+          "query" => "SELECT * FROM table WHERE ip=?",
+          "parameters" => {"ip" => "%%{[ip]}"},
+          "prepared_parameters" => ["%%{[ip]}"],
+          "target" => "server"
+          }
+          result = described_class.find_validation_errors([lookup_hash])
+          expect(result).to eq("Can't specify 'parameters' and 'prepared_parameters' in the same lookup")
+        end
+
+        it "prepared_parameters count doesn't match the number of '?' in the query" do
+          lookup_hash = {
+          "query" => "SELECT * FROM table WHERE ip=? AND host=?",
+          "prepared_parameters" => ["%%{[ip]}"],
+          "target" => "server"
+          }
+          result = described_class.find_validation_errors([lookup_hash])
+          expect(result).to eq("The 'prepared_parameters' option for 'lookup-1' doesn't match count with query's placeholder")
+        end
       end
 
       context "when supplied with a valid arg" do
@@ -122,6 +143,109 @@ module LogStash module Filters module Jdbc
         subject.enhance(local_db, event)
         expect(event.get("tags")).to be_nil
         expect(event.get("server")).to eq(records)
+      end
+    end
+
+    describe "lookup operations with prepared statement" do
+      let(:local_db) { double("local_db") }
+      let(:lookup_hash) do
+        {
+          "query" => "select * from servers WHERE ip LIKE ?",
+          "prepared_parameters" => ["%%{[ip]}"],
+          "target" => "server",
+          "tag_on_failure" => ["_jdbcstaticfailure_server"]
+        }
+      end
+      let(:event) { LogStash::Event.new()}
+      let(:records) { [{"name" => "ldn-1-23", "rack" => "2:1:6"}] }
+      let(:prepared_statement) { double("prepared_statement")}
+
+      subject(:lookup) { described_class.new(lookup_hash, {}, "lookup-1") }
+
+      before(:each) do
+        allow(local_db).to receive(:prepare).once.and_return(prepared_statement)
+        allow(prepared_statement).to receive(:call).once.and_return(records)
+      end
+
+      it "should be valid" do
+        expect(subject.valid?).to be_truthy
+      end
+
+      it "should have no formatted_errors" do
+        expect(subject.formatted_errors).to eq("")
+      end
+
+      it "should enhance an event" do
+        event.set("ip", "20.20")
+        subject.prepare(local_db)
+        subject.enhance(local_db, event)
+        expect(event.get("tags")).to be_nil
+        expect(event.get("server")).to eq(records)
+      end
+    end
+
+    describe "lookup operations with prepared statement multiple parameters" do
+      let(:local_db) { double("local_db") }
+      let(:lookup_hash) do
+        {
+          "query" => "select * from servers WHERE ip LIKE ? AND os LIKE ?",
+          "prepared_parameters" => ["%%{[ip]}", "os"],
+          "target" => "server",
+          "tag_on_failure" => ["_jdbcstaticfailure_server"]
+        }
+      end
+      let(:event) { LogStash::Event.new()}
+      let(:records) { [{"name" => "ldn-1-23", "rack" => "2:1:6"}] }
+      let(:prepared_statement) { double("prepared_statement")}
+
+      subject(:lookup) { described_class.new(lookup_hash, {}, "lookup-1") }
+
+      before(:each) do
+        allow(local_db).to receive(:prepare).once.and_return(prepared_statement)
+        allow(prepared_statement).to receive(:call).once.and_return(records)
+      end
+
+      it "should be valid" do
+        expect(subject.valid?).to be_truthy
+      end
+
+      it "should have no formatted_errors" do
+        expect(subject.formatted_errors).to eq("")
+      end
+
+      it "should enhance an event" do
+        event.set("ip", "20.20")
+        event.set("os", "MacOS")
+        subject.prepare(local_db)
+        subject.enhance(local_db, event)
+        expect(event.get("tags")).to be_nil
+        expect(event.get("server")).to eq(records)
+      end
+    end
+
+    describe "lookup operations with badly configured prepared statement" do
+      let(:local_db) { double("local_db") }
+      let(:lookup_hash) do
+        {
+          "query" => "select * from servers WHERE ip LIKE ? AND os LIKE ?",
+          "prepared_parameters" => ["%%{[ip]}"],
+          "target" => "server",
+          "tag_on_failure" => ["_jdbcstaticfailure_server"]
+        }
+      end
+      let(:event) { LogStash::Event.new()}
+      let(:records) { [{"name" => "ldn-1-23", "rack" => "2:1:6"}] }
+      let(:prepared_statement) { double("prepared_statement")}
+
+      subject(:lookup) { described_class.new(lookup_hash, {}, "lookup-1") }
+
+      before(:each) do
+        allow(local_db).to receive(:prepare).once.and_return(prepared_statement)
+        allow(prepared_statement).to receive(:call).once.and_return(records)
+      end
+
+      it "must not be valid" do
+        expect(subject.valid?).to be_falsey
       end
     end
   end
