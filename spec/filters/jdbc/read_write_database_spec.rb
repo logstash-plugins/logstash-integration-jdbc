@@ -1,6 +1,6 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
-require "logstash-filter-jdbc_static_jars"
+require "logstash-integration-jdbc_jars"
 require "logstash/util/password"
 require "logstash/filters/jdbc/db_object"
 require "logstash/filters/jdbc/read_write_database"

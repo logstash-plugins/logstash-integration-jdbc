@@ -1,5 +1,5 @@
 # encoding: utf-8
-require "logstash-filter-jdbc_static_jars"
+require "logstash-integration-jdbc_jars"
 require "logstash/filters/base"
 require "logstash/namespace"
 require_relative "jdbc/loader"
