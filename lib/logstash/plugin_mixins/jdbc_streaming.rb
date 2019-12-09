@@ -1,6 +1,5 @@
 # encoding: utf-8
 require "logstash/config/mixin"
-require_relative "jdbc_streaming/wrapped_driver"
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
