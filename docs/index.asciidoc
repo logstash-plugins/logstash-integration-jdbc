@@ -21,6 +21,12 @@ include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-The JDBC Integration Plugin provides integrated plugins for working with Databases.
+The JDBC Integration Plugin provides integrated plugins for working with databases that provide JDBC drivers:
+
+ - {logstash-ref}/plugins-inputs-jdbc.html[JDBC Input Plugin]
+ - {logstash-ref}/plugins-filters-jdbc_static.html[JDBC Static Filter Plugin]
+ - {logstash-ref}/plugins-filters-jdbc_streaming.html[JDBC Streaming Filter Plugin]
 
 :no_codec!:
+
+
