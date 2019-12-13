@@ -16,11 +16,6 @@ Gem::Specification.new do |s|
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 
   # Special flag to let us know this is actually a logstash plugin
-  s.metadata = { "logstash_plugin" => "true", "logstash_group" => "input" }
-  # Special flag to let us know this is actually a logstash plugin
-  s.metadata = { "logstash_plugin" => "true", "logstash_group" => "filter" }
-
-  # Special flag to let us know this is actually a logstash plugin
   s.metadata = {
       "logstash_plugin"     => "true",
       "logstash_group"      => "integration",
@@ -31,6 +26,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'jar-dependencies', '~> 0.3'
 
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
+  # Restrict use of this plugin to versions of Logstash where support for integration plugins is present.
+  s.add_runtime_dependency "logstash-core", ">= 6.5.0"
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'sequel'
   s.add_runtime_dependency 'lru_redux' # lru cache with ttl
