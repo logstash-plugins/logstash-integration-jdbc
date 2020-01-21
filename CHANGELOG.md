@@ -1,3 +1,6 @@
+## N.X.T
+  - Fix: driver loading when file not accessible [#15](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/15)
+
 ## 5.0.0
   - Initial Release of JDBC Integration Plugin, incorporating [logstash-input-jdbc](https://github.com/logstash-plugins/logstash-input-jdbc), [logstash-filter-jdbc_streaming](https://github.com/logstash-plugins/logstash-filter-jdbc_streaming) and
     [logstash-filter-jdbc_static](https://github.com/logstash-plugins/logstash-filter-jdbc_static)
