@@ -28,10 +28,11 @@ describe LogStash::Inputs::Jdbc do
       # before body
       Jdbc::Derby.load_driver
       db.create_table :test_table do
-        DateTime :created_at
-        Integer  :num
-        String   :string
-        DateTime :custom_time
+        DateTime     :created_at
+        BigDecimal   :big_num
+        Integer      :num
+        String       :string
+        DateTime     :custom_time
       end
       db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6))"
       db << "CREATE TABLE test1_table (num INTEGER, string VARCHAR(255), custom_time TIMESTAMP, created_at TIMESTAMP)"
@@ -542,6 +543,54 @@ describe LogStash::Inputs::Jdbc do
       test_table.insert(:num => nums[4], :created_at => Time.now.utc)
       plugin.run(queue)
       expect(plugin.instance_variable_get("@value_tracker").value).to eq(50)
+    end
+  end
+
+  context "Test Sql Last Value with a BigDecimal `sqlLastValue`" do
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
+      }
+    end
+
+    let(:settings) do
+      { "statement" => "SELECT big_num, created_at FROM test_table WHERE big_num > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "big_num",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:nums) { [BigDecimal.new(10), BigDecimal.new(20), BigDecimal.new(30), BigDecimal.new(40), BigDecimal.new(50)] }
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should only pick up new values" do
+      test_table = db[:test_table]
+
+      plugin.run(queue)
+      expect(queue.size).to eq(0)
+      test_table.insert(:big_num => nums[0], :created_at => Time.now.utc)
+      test_table.insert(:big_num => nums[1], :created_at => Time.now.utc)
+      queue = []
+      # Stop and restart the plugin to have it read saved value of `sql_last_value`
+      plugin.stop
+      plugin.register
+      plugin.run(queue)
+      expect(queue.size).to eq(2)
+      test_table.insert(:big_num => nums[2], :created_at => Time.now.utc)
+      test_table.insert(:big_num => nums[3], :created_at => Time.now.utc)
+      test_table.insert(:big_num => nums[4], :created_at => Time.now.utc)
+      queue = []
+      plugin.stop
+      plugin.register
+      plugin.run(queue)
+      expect(queue.size).to eq(3)
     end
   end
 
