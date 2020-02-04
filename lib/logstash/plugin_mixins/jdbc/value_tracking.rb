@@ -62,7 +62,7 @@ module LogStash module PluginMixins module Jdbc
 
   class NumericValueTracker < ValueTracking
     def set_initial
-      common_set_initial(:gcd, 0)
+      common_set_initial(:abs, 0)
     end
 
     def set_value(value)
