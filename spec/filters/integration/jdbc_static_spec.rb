@@ -35,6 +35,7 @@ module LogStash module Filters
     let(:settings) do
       {
         "jdbc_user" => ENV['USER'],
+        "jdbc_password" => ENV["POSTGRES_PASSWORD"],
         "jdbc_driver_class" => "org.postgresql.Driver",
         "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
         "staging_directory" => temp_import_path_plugin,
@@ -88,6 +89,7 @@ module LogStash module Filters
         let(:settings) do
           {
             "jdbc_user" => ENV['USER'],
+            "jdbc_password" => ENV["POSTGRES_PASSWORD"],
             "jdbc_driver_class" => "org.postgresql.Driver",
             "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
             "staging_directory" => temp_import_path_plugin,
