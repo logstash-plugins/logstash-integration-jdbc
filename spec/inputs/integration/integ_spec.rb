@@ -19,6 +19,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       "jdbc_connection_string" => jdbc_connection_string,
       "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
       "jdbc_user" => "postgres",
+      "jdbc_password" => ENV["POSTGRES_PASSWORD"],
       "statement" => 'SELECT FIRST_NAME, LAST_NAME FROM "employee" WHERE EMP_NO = 2'
     }
   end
