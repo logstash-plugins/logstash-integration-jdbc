@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+
+  logstash:
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      LOGSTASH_SOURCE: 1
+      PG_CONNECTION_STRING: "jdbc:postgresql://postgresql:5432"
+      POSTGRES_PASSWORD: "test_user_password"
+
+  postgresql:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: "test_user_password"
+    volumes:
+    - ./setup.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+
