@@ -97,7 +97,14 @@ module LogStash module PluginMixins module Jdbc
       end
       bind_value_sql_last_value(sql_last_value)
       statement_logger.log_statement_parameters(statement, parameters, nil)
-      db.call(name, parameters)
+      begin
+        db.call(name, parameters)
+      rescue => e
+        # clear the statement prepared flag - the statement may be closed by this
+        # time.
+        statement_prepared.make_false
+        raise e
+      end
     end
 
     def post_init(plugin)
