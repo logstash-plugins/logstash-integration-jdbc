@@ -272,16 +272,22 @@ module LogStash  module PluginMixins module Jdbc
 
     public
     def get_column_value(row)
-      if !row.has_key?(@tracking_column.to_sym)
-        if !@tracking_column_warning_sent
-          @logger.warn("tracking_column not found in dataset.", :tracking_column => @tracking_column)
-          @tracking_column_warning_sent = true
-        end
+      tracking_column = @tracking_column.to_sym
+      if !row.has_key?(tracking_column)
+        warn_tracking_column_not_found(row)
         # If we can't find the tracking column, return the current value in the ivar
         @value_tracker.value
       else
         # Otherwise send the updated tracking column
-        row[@tracking_column.to_sym]
+        row[tracking_column]
+      end
+    end
+
+    private
+    def warn_tracking_column_not_found(row)
+      if !@tracking_column_warning_sent
+        @logger.warn("tracking_column not found in dataset.", :tracking_column => @tracking_column, :dataset_columns => row.keys.map(&:to_s))
+        @tracking_column_warning_sent = true
       end
     end
 
