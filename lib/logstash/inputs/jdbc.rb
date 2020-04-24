@@ -283,6 +283,10 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     end
   end # def run
 
+  def close
+    @scheduler.shutdown if @scheduler
+  end
+
   def stop
     close_jdbc_connection
     @scheduler.shutdown(:wait) if @scheduler

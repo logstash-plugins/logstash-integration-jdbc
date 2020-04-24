@@ -191,6 +191,18 @@ describe LogStash::Inputs::Jdbc do
       Timecop.return
     end
 
+    it "cleans up scheduler resources on close" do
+      runner = Thread.new do
+        plugin.run(queue)
+      end
+      sleep 1
+      plugin.do_close
+
+      scheduler = plugin.instance_variable_get(:@scheduler)
+      expect(scheduler).to_not be_nil
+      expect(scheduler.down?).to be_truthy
+    end
+
   end
 
   context "when scheduling and previous runs are to be preserved" do
