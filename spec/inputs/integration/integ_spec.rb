@@ -3,7 +3,6 @@ require "logstash/inputs/jdbc"
 require "sequel"
 require "sequel/adapters/jdbc"
 
-# This test requires: Firebird installed to Mac OSX, it uses the built-in example database `employee`
 
 describe LogStash::Inputs::Jdbc, :integration => true do
   # This is a necessary change test-wide to guarantee that no local timezone

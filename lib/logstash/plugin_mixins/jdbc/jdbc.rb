@@ -260,7 +260,9 @@ module LogStash  module PluginMixins module Jdbc
         end
         success = true
       rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError, Java::JavaSql::SQLException => e
-        @logger.warn("Exception when executing JDBC query", :exception => e)
+        details = { :exception => e.message }
+        details[:backtrace] = e.backtrace if @logger.debug?
+        @logger.warn("Exception when executing JDBC query", details)
       else
         @value_tracker.set_value(sql_last_value)
       ensure
