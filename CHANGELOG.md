@@ -1,4 +1,4 @@
-## 5.0.2
+## 5.0.3
   - Fixed issue where a lost connection to the database can cause errors when using prepared statements with the scheduler [#25](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/25)
 
 ## 5.0.2
