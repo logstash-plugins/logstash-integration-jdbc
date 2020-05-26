@@ -136,14 +136,14 @@ module LogStash module Filters
     describe "scheduled operation" do
       context "given a loader_schedule" do
         it "should properly schedule" do
-          settings["loader_schedule"] = "*/10 * * * * * UTC"
+          settings["loader_schedule"] = "*/3 * * * * * UTC"
           Timecop.travel(Time.now.utc - 3600)
           Timecop.scale(60)
           static_filter = JdbcStatic.new(settings)
           runner = Thread.new(static_filter) do |filter|
             filter.register
           end
-          sleep 3
+          sleep 4
           static_filter.filter(event)
           expect(static_filter.loader_runner.reload_count).to be > 1
           static_filter.close
