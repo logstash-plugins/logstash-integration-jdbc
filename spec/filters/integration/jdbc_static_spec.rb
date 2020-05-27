@@ -4,7 +4,6 @@ require "logstash/filters/jdbc_static"
 require "sequel"
 require "sequel/adapters/jdbc"
 require "stud/temporary"
-require "timecop"
 
 module LogStash module Filters
   describe JdbcStatic, :integration => true do
@@ -137,8 +136,6 @@ module LogStash module Filters
       context "given a loader_schedule" do
         it "should properly schedule" do
           settings["loader_schedule"] = "*/3 * * * * * UTC"
-          Timecop.travel(Time.now.utc - 3600)
-          Timecop.scale(60)
           static_filter = JdbcStatic.new(settings)
           runner = Thread.new(static_filter) do |filter|
             filter.register
@@ -148,7 +145,6 @@ module LogStash module Filters
           static_filter.filter(event)
           expect(static_filter.loader_runner.reload_count).to be > 1
           static_filter.close
-          Timecop.return
           expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-server-1", "location"=>"MV-9-6-4"}])
         end
       end
