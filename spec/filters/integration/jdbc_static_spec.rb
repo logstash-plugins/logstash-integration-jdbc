@@ -143,6 +143,7 @@ module LogStash module Filters
           runner = Thread.new(static_filter) do |filter|
             filter.register
           end
+          runner.join(4)
           sleep 4
           static_filter.filter(event)
           expect(static_filter.loader_runner.reload_count).to be > 1
