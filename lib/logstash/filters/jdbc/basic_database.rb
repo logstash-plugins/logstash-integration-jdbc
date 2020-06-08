@@ -95,7 +95,7 @@ module LogStash module Filters module Jdbc
       end
       begin
         db = nil
-        ::Sequel::JDBC.load_driver(driver_class)
+        @options_hash[:driver] = ::Sequel::JDBC.load_driver(driver_class)
         @connection_string = connection_string
         if user
           @options_hash[:user] = user

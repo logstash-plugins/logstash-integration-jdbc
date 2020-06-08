@@ -84,7 +84,7 @@ module LogStash module PluginMixins module JdbcStreaming
     @sequel_opts_symbols[:user] = @jdbc_user unless @jdbc_user.nil? || @jdbc_user.empty?
     @sequel_opts_symbols[:password] = @jdbc_password.value unless @jdbc_password.nil?
 
-    Sequel::JDBC.load_driver(@jdbc_driver_class)
+    @sequel_opts_symbols[:driver] = Sequel::JDBC.load_driver(@jdbc_driver_class)
     @database = Sequel.connect(@jdbc_connection_string, @sequel_opts_symbols)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
