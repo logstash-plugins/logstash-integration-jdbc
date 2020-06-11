@@ -145,6 +145,7 @@ module LogStash  module PluginMixins module Jdbc
         require "java"
         require "sequel"
         require "sequel/adapters/jdbc"
+        require "sequel/adapters/jdbc/transactions"
 
         load_driver_jars
         begin
@@ -194,6 +195,7 @@ module LogStash  module PluginMixins module Jdbc
 
       @database = jdbc_connect()
       @database.extension(:pagination)
+      @database.extend(Sequel::JDBC::Transactions)
       if @jdbc_default_timezone
         @database.extension(:named_timezones)
         @database.timezone = @jdbc_default_timezone
