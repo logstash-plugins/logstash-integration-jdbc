@@ -1,3 +1,6 @@
+## 5.0.4
+  - Fixed issue where JDBC Drivers that don't correctly register with Java's DriverManager fail to load (such as Sybase) [#34](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/34)
+
 ## 5.0.3
   - Fixed issue where a lost connection to the database can cause errors when using prepared statements with the scheduler [#25](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/25)
 

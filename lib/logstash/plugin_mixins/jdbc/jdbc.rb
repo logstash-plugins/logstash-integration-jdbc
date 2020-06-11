@@ -110,13 +110,14 @@ module LogStash  module PluginMixins module Jdbc
       :user => @jdbc_user,
       :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
       :pool_timeout => @jdbc_pool_timeout,
+      :driver => @driver_impl, # Sequel uses this as a fallback, if given URI doesn't auto-load the driver correctly
       :keep_reference => false
       }.merge(@sequel_opts)
       retry_attempts = @connection_retry_attempts
       loop do
         retry_attempts -= 1
         begin
-          return Sequel.connect(@jdbc_connection_string, opts=opts)
+          return Sequel.connect(@jdbc_connection_string, opts)
         rescue Sequel::PoolTimeout => e
           if retry_attempts <= 0
             @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
@@ -147,7 +148,7 @@ module LogStash  module PluginMixins module Jdbc
 
         load_driver_jars
         begin
-          Sequel::JDBC.load_driver(@jdbc_driver_class)
+          @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
         rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
           # fix this !!!
           message = if jdbc_driver_library_set?
