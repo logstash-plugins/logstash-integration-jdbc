@@ -55,37 +55,11 @@ module LogStash module PluginMixins module JdbcStreaming
     config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 
-  private
-
-  def load_driver_jars
-    unless @jdbc_driver_library.nil? || @jdbc_driver_library.empty?
-      @jdbc_driver_library.split(",").each do |driver_jar|
-        begin
-          @logger.debug("loading #{driver_jar}")
-          # Use https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#from-jar-files to make classes from jar
-          # available
-          require driver_jar
-        rescue LoadError => e
-          raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, #{e.message}"
-        end
-      end
-    end
-  end
-
   public
   def prepare_jdbc_connection
-    require "sequel"
-    require "sequel/adapters/jdbc"
-    require "java"
+    load_driver
 
-    load_driver_jars
-
-    @sequel_opts_symbols = @sequel_opts.inject({}) {|hash, (k,v)| hash[k.to_sym] = v; hash}
-    @sequel_opts_symbols[:user] = @jdbc_user unless @jdbc_user.nil? || @jdbc_user.empty?
-    @sequel_opts_symbols[:password] = @jdbc_password.value unless @jdbc_password.nil?
-
-    @sequel_opts_symbols[:driver] = Sequel::JDBC.load_driver(@jdbc_driver_class)
-    @database = Sequel.connect(@jdbc_connection_string, @sequel_opts_symbols)
+    @database = Sequel.connect(@jdbc_connection_string, complete_sequel_opts)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
       @database.pool.connection_validation_timeout = @jdbc_validation_timeout

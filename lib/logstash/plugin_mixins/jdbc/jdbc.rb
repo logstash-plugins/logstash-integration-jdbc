@@ -106,18 +106,12 @@ module LogStash  module PluginMixins module Jdbc
 
     private
     def jdbc_connect
-      opts = {
-      :user => @jdbc_user,
-      :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
-      :pool_timeout => @jdbc_pool_timeout,
-      :driver => @driver_impl, # Sequel uses this as a fallback, if given URI doesn't auto-load the driver correctly
-      :keep_reference => false
-      }.merge(@sequel_opts)
+      sequel_opts = complete_sequel_opts(:pool_timeout => @jdbc_pool_timeout, :keep_reference => false)
       retry_attempts = @connection_retry_attempts
       loop do
         retry_attempts -= 1
         begin
-          return Sequel.connect(@jdbc_connection_string, opts)
+          return Sequel.connect(@jdbc_connection_string, sequel_opts)
         rescue Sequel::PoolTimeout => e
           if retry_attempts <= 0
             @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
@@ -128,7 +122,7 @@ module LogStash  module PluginMixins module Jdbc
         # rescue Java::JavaSql::SQLException, ::Sequel::Error => e
         rescue ::Sequel::Error => e
           if retry_attempts <= 0
-            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message, )
+            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message)
             raise e
           else
             @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
@@ -136,56 +130,6 @@ module LogStash  module PluginMixins module Jdbc
         end
         sleep(@connection_retry_attempts_wait_time)
       end
-    end
-
-    private
-
-    def load_driver
-      if @drivers_loaded.false?
-        require "java"
-        require "sequel"
-        require "sequel/adapters/jdbc"
-
-        load_driver_jars
-        begin
-          @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
-        rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
-          # fix this !!!
-          message = if jdbc_driver_library_set?
-                      "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
-                    else
-                      ":jdbc_driver_library is not set, are you sure you included " +
-                          "the proper driver client libraries in your classpath?"
-                    end
-          raise LogStash::PluginLoadingError, "#{e}. #{message}"
-        end
-        @drivers_loaded.make_true
-      end
-    end
-
-    def load_driver_jars
-      if jdbc_driver_library_set?
-        @jdbc_driver_library.split(",").each do |driver_jar|
-          @logger.debug("loading #{driver_jar}")
-          # load 'driver.jar' is different than load 'some.rb' as it only causes the file to be added to
-          # JRuby's class-loader lookup (class) path - won't raise a LoadError when file is not readable
-          unless FileTest.readable?(driver_jar)
-            raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, " +
-                "file not readable (please check user and group permissions for the path)"
-          end
-          begin
-            require driver_jar
-          rescue LoadError => e
-            raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, #{e.message}"
-          rescue StandardError => e
-            raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, #{e}"
-          end
-        end
-      end
-    end
-
-    def jdbc_driver_library_set?
-      !@jdbc_driver_library.nil? && !@jdbc_driver_library.empty?
     end
 
     def open_jdbc_connection
@@ -230,7 +174,6 @@ module LogStash  module PluginMixins module Jdbc
     public
     def prepare_jdbc_connection
       @connection_lock = ReentrantLock.new
-      @drivers_loaded = Concurrent::AtomicBoolean.new
     end
 
     public

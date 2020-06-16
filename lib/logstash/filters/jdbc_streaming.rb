@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "logstash/filters/base"
 require "logstash/namespace"
+require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc_streaming"
 require "logstash/plugin_mixins/jdbc_streaming/cache_payload"
 require "logstash/plugin_mixins/jdbc_streaming/statement_handler"
@@ -46,6 +47,7 @@ require "lru_redux"
 # }
 #
 module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
+  include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::JdbcStreaming
 
   config_name "jdbc_streaming"
