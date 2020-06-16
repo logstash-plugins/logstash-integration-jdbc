@@ -13,9 +13,13 @@ require "date"
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
 describe LogStash::Inputs::Jdbc do
+  let(:connection_string) { "jdbc:derby:memory:testdb;create=true" }
   let(:mixin_settings) do
-    { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
-      "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
+    {
+        "jdbc_user" => ENV['USER'],
+        "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => connection_string
+    }
   end
   let(:settings) { {} }
   let(:plugin) { LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings)) }
@@ -112,6 +116,52 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when sequel opts has user option" do
+    let(:settings) do
+      {
+          "jdbc_user" => 'system',
+          "statement" => "SELECT * from test_table",
+          "sequel_opts" => { "user" => 'from-opts' }
+      }
+    end
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should honor set jdbc-user when connecting" do
+      expect( Sequel ).to receive(:connect).with connection_string, hash_including(:user=>"system")
+      plugin.send(:jdbc_connect)
+    end
+  end
+
+  context "with sequel opts" do
+    let(:settings) do
+      {
+          "jdbc_user" => 'system',
+          "statement" => "SELECT * from test_table",
+          "sequel_opts" => { "convert_types" => false, "jdbc_properties" => { "foo" => 'bar' } }
+      }
+    end
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should symbolize keys" do
+      expect( Sequel ).to receive(:connect).with connection_string,
+                                                 hash_including(:convert_types => false, :jdbc_properties => { 'foo' => 'bar' })
+      plugin.send(:jdbc_connect)
+    end
+  end
 
   context "when neither statement and statement_filepath arguments are passed" do
     it "should fail to register" do

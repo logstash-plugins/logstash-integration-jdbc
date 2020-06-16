@@ -59,12 +59,7 @@ module LogStash module PluginMixins module JdbcStreaming
   def prepare_jdbc_connection
     load_driver
 
-    sequel_opts = @sequel_opts.inject({}) {|hash, (k,v)| hash[k.to_sym] = v; hash}
-    sequel_opts[:user] = @jdbc_user unless @jdbc_user.nil? || @jdbc_user.empty?
-    sequel_opts[:password] = @jdbc_password.value unless @jdbc_password.nil?
-    sequel_opts[:driver] = @driver_impl
-
-    @database = Sequel.connect(@jdbc_connection_string, sequel_opts)
+    @database = Sequel.connect(@jdbc_connection_string, complete_sequel_opts)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
       @database.pool.connection_validation_timeout = @jdbc_validation_timeout

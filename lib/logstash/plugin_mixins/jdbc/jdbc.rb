@@ -106,18 +106,12 @@ module LogStash  module PluginMixins module Jdbc
 
     private
     def jdbc_connect
-      opts = {
-      :user => @jdbc_user,
-      :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
-      :pool_timeout => @jdbc_pool_timeout,
-      :driver => @driver_impl, # Sequel uses this as a fallback, if given URI doesn't auto-load the driver correctly
-      :keep_reference => false
-      }.merge(@sequel_opts)
+      sequel_opts = complete_sequel_opts(:pool_timeout => @jdbc_pool_timeout, :keep_reference => false)
       retry_attempts = @connection_retry_attempts
       loop do
         retry_attempts -= 1
         begin
-          return Sequel.connect(@jdbc_connection_string, opts)
+          return Sequel.connect(@jdbc_connection_string, sequel_opts)
         rescue Sequel::PoolTimeout => e
           if retry_attempts <= 0
             @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
@@ -128,7 +122,7 @@ module LogStash  module PluginMixins module Jdbc
         # rescue Java::JavaSql::SQLException, ::Sequel::Error => e
         rescue ::Sequel::Error => e
           if retry_attempts <= 0
-            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message, )
+            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message)
             raise e
           else
             @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
