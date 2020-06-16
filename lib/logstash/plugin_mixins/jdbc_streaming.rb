@@ -55,23 +55,6 @@ module LogStash module PluginMixins module JdbcStreaming
     config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 
-  private
-
-  def load_driver_jars
-    unless @jdbc_driver_library.nil? || @jdbc_driver_library.empty?
-      @jdbc_driver_library.split(",").each do |driver_jar|
-        begin
-          @logger.debug("loading #{driver_jar}")
-          # Use https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#from-jar-files to make classes from jar
-          # available
-          require driver_jar
-        rescue LoadError => e
-          raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, #{e.message}"
-        end
-      end
-    end
-  end
-
   public
   def prepare_jdbc_connection
     require "sequel"

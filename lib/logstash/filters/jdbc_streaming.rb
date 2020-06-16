@@ -46,6 +46,7 @@ require "lru_redux"
 # }
 #
 module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
+  include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::JdbcStreaming
 
   config_name "jdbc_streaming"

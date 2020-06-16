@@ -126,6 +126,7 @@ require_relative "tzinfo_jruby_patch"
 # ---------------------------------------------------------------------------------------------------
 #
 module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
+  include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
   config_name "jdbc"
 
