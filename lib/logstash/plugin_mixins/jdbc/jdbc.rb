@@ -138,31 +138,6 @@ module LogStash  module PluginMixins module Jdbc
       end
     end
 
-    private
-
-    def load_driver
-      if @drivers_loaded.false?
-        require "java"
-        require "sequel"
-        require "sequel/adapters/jdbc"
-
-        load_driver_jars
-        begin
-          @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
-        rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
-          # fix this !!!
-          message = if jdbc_driver_library_set?
-                      "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
-                    else
-                      ":jdbc_driver_library is not set, are you sure you included " +
-                          "the proper driver client libraries in your classpath?"
-                    end
-          raise LogStash::PluginLoadingError, "#{e}. #{message}"
-        end
-        @drivers_loaded.make_true
-      end
-    end
-
     def open_jdbc_connection
       # at this point driver is already loaded
       Sequel.application_timezone = @plugin_timezone.to_sym
@@ -205,7 +180,6 @@ module LogStash  module PluginMixins module Jdbc
     public
     def prepare_jdbc_connection
       @connection_lock = ReentrantLock.new
-      @drivers_loaded = Concurrent::AtomicBoolean.new
     end
 
     public

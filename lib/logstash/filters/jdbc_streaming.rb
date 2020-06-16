@@ -1,6 +1,7 @@
 # encoding: utf-8
 require "logstash/filters/base"
 require "logstash/namespace"
+require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc_streaming"
 require "logstash/plugin_mixins/jdbc_streaming/cache_payload"
 require "logstash/plugin_mixins/jdbc_streaming/statement_handler"
