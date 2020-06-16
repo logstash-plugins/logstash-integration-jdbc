@@ -144,7 +144,12 @@ describe LogStash::Inputs::Jdbc do
       {
           "jdbc_user" => 'system',
           "statement" => "SELECT * from test_table",
-          "sequel_opts" => { "convert_types" => false, "jdbc_properties" => { "foo" => 'bar' } }
+          "sequel_opts" => {
+              "truthy" => 'true',
+              "falsey" => 'false',
+              "foo" => 'bar',
+              "jdbc_properties" => { "some" => 'true' }
+          }
       }
     end
 
@@ -158,7 +163,7 @@ describe LogStash::Inputs::Jdbc do
 
     it "should symbolize keys" do
       expect( Sequel ).to receive(:connect).with connection_string,
-                                                 hash_including(:convert_types => false, :jdbc_properties => { 'foo' => 'bar' })
+          hash_including(:truthy => true, :falsey => false, :foo => 'bar', :jdbc_properties => { 'some' => 'true' })
       plugin.send(:jdbc_connect)
     end
   end

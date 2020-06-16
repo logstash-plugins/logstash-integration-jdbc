@@ -5,7 +5,10 @@ module LogStash module PluginMixins module Jdbc
     private
 
     def complete_sequel_opts(defaults = {})
-      sequel_opts = defaults.merge Hash[ @sequel_opts.map { |key,val| [key.is_a?(String) ? key.to_sym : key, val] } ]
+      sequel_opts = @sequel_opts.
+          map { |key,val| [key.is_a?(String) ? key.to_sym : key, val] }.
+          map { |key,val| [key, val.eql?('true') ? true : (val.eql?('false') ? false : val)] }
+      sequel_opts = defaults.merge Hash[sequel_opts]
       sequel_opts[:user] = @jdbc_user unless @jdbc_user.nil? || @jdbc_user.empty?
       sequel_opts[:password] = @jdbc_password.value unless @jdbc_password.nil?
       sequel_opts[:driver] = @driver_impl # Sequel uses this as a fallback, if given URI doesn't auto-load the driver correctly
