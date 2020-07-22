@@ -1,3 +1,4 @@
+:integration: jdbc
 :plugin: jdbc_static
 :type: filter
 
