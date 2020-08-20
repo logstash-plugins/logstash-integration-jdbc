@@ -1,3 +1,4 @@
+:integration: jdbc
 :plugin: jdbc_streaming
 :type: filter
 
@@ -16,7 +17,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 === Jdbc_streaming filter plugin
 
-include::{include_path}/plugin_header.asciidoc[]
+include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
