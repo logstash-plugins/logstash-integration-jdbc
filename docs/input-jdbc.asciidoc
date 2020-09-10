@@ -48,6 +48,7 @@ Examples:
 |==========================================================
 | `* 5 * 1-3 *`               | will execute every minute of 5am every day of January through March.
 | `0 * * * *`                 | will execute on the 0th minute of every hour every day.
+| `*/30 * * * * *`            | will execute with 30 seconds duration.
 | `0 6 * * * America/Chicago` | will execute at 6:00am (UTC/GMT -5) every day.
 |==========================================================
 
