@@ -26,6 +26,10 @@ This filter enriches events with data pre-loaded from a remote database.
 This filter is best suited for enriching events with reference data that is
 static or does not change very often, such as environments, users, and products.
 
+TIP: If you need to process dynamic data, consider using the
+{logstash-ref}/plugins-filters-jdbc_streaming.html[JDBC streaming filter plugin]
+instead. 
+
 This filter works by fetching data from a remote database, caching it in a
 local, in-memory https://db.apache.org/derby/manuals/#docs_10.14[Apache Derby]
 database, and using lookups to enrich events with data cached in the local
