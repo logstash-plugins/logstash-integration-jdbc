@@ -208,6 +208,7 @@ module LogStash  module PluginMixins module Jdbc
         details[:backtrace] = e.backtrace if @logger.debug?
         @logger.warn("Exception when executing JDBC query", details)
       else
+        @logger.debug "last run value", :sql_last_value => sql_last_value
         @value_tracker.set_value(sql_last_value)
       ensure
         close_jdbc_connection

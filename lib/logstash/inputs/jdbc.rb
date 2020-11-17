@@ -268,6 +268,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   def set_value_tracker(instance)
+    @logger.debug "using last run value tracker: #{instance.inspect}"
     @value_tracker = instance
   end
 
