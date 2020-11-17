@@ -209,7 +209,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
-  attr_reader :database # for test mocking/stubbing
+  attr_reader :database, :value_tracker # for test mocking/stubbing
 
   public
 

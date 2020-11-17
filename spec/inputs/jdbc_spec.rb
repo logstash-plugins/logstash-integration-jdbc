@@ -1097,7 +1097,7 @@ describe LogStash::Inputs::Jdbc do
     it "should raise PoolTimeout error" do
       plugin.register
       plugin.run(queue)
-      db = plugin.instance_variable_get(:@database)
+      db = plugin.database
       expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
       expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
 
