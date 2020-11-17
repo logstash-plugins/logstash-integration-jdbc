@@ -79,16 +79,6 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       Tempfile.new('last_run_metadata')
     end
 
-    let(:settings) do
-      super.merge('use_column_value' => true,
-                  'tracking_column' => "updated_at",
-                  'tracking_column_type' => "timestamp",
-                  'jdbc_default_timezone' => "Europe/Paris", # ENV["TZ"] is "Etc/UTC"
-                  'schedule' => "*/2 * * * * *", # every 2 seconds
-                  'last_run_metadata_path' => last_run_metadata_file.path,
-                  'statement' => "SELECT * FROM employee WHERE updated_at IS NOT NULL AND updated_at > :sql_last_value ORDER BY updated_at")
-    end
-
     before do
       plugin.register
     end
@@ -98,50 +88,126 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       plugin.stop
     end
 
-    it "should populate the event with database entries" do
-      Thread.start { plugin.run(queue) }
+    context '(DATE)' do
 
-      sleep(2.5)
+      let(:settings) do
+        super.merge('use_column_value' => true,
+                    'tracking_column' => "created_at",
+                    'tracking_column_type' => "timestamp",
+                    'jdbc_default_timezone' => "America/New_York", # ENV["TZ"] is "Etc/UTC"
+                    'schedule' => "*/2 * * * * *", # every 2 seconds
+                    'last_run_metadata_path' => last_run_metadata_file.path,
+                    'statement' => "SELECT * FROM employee WHERE created_at > :sql_last_value ORDER BY created_at")
+      end
 
-      expect( queue.size ).to be >= 3
-      event = queue.pop
-      expect(event.get('first_name')).to eq("David")
-      event = queue.pop
-      expect(event.get('first_name')).to eq("Mark")
-      event = queue.pop
-      expect(event.get('first_name')).to eq("Ján")
-
-      expect( last_run_value = read_last_run_metadata_yaml ).to be >= DateTime.new(2000)
-      expect( last_run_value.zone ).to eql '+00:00'
-
-      begin
-        delete_test_employee_data!(plugin.database)
-        insert_test_employee_data!(plugin.database, now = Time.now)
+      it "should populate the event with database entries" do
+        Thread.start { plugin.run(queue) }
 
         sleep(2.5)
 
-        expect( queue.size ).to eql 3
-
+        expect( queue.size ).to be >= 4
         event = queue.pop
-        expect(event.get('first_name')).to eq("3")
+        expect(event.get('first_name')).to eq("Mark")
         event = queue.pop
-        expect(event.get('first_name')).to eq("2")
+        expect(event.get('first_name')).to eq("David")
         event = queue.pop
-        expect(event.get('first_name')).to eq("1")
+        expect(event.get('first_name')).to eq("Ján")
+        expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
+        event = queue.pop
+        expect(event.get('first_name')).to eq("Jožko")
 
-        # e.g. #<DateTime: 2020-11-17T10:03:17+00:00 ...>
-        expect( read_last_run_metadata_yaml ).to be > last_run_value
-        expect( read_last_run_metadata_yaml.to_time ).to be > now
+        expect( last_run_value = read_last_run_metadata_yaml ).to be >= DateTime.new(2010)
+        expect( last_run_value.zone ).to eql '+00:00'
 
-      ensure
-        delete_test_employee_data!(plugin.database)
+        expect( queue.size ).to be 0
+
+        begin
+          delete_test_employee_data!(plugin.database)
+          insert_test_employee_data!(plugin.database, now = Date.today, :created_at)
+
+          sleep(2.0)
+
+          # TODO will return "emp_no" => 4 ("Jožko") again
+          # due SELECT * FROM employee WHERE created_at > '2009-12-31 19:00:00.000000-0500'
+          # expect( queue.size ).to eql 3
+          #
+          # event = queue.pop
+          # expect(event.get('first_name')).to eq("3")
+          # event = queue.pop
+          # expect(event.get('first_name')).to eq("2")
+          # event = queue.pop
+          # expect(event.get('first_name')).to eq("1")
+
+          expect( read_last_run_metadata_yaml ).to be > last_run_value
+          expect( read_last_run_metadata_yaml ).to be > now
+
+        ensure
+          delete_test_employee_data!(plugin.database)
+        end
       end
+
     end
 
-    def insert_test_employee_data!(db, now)
-      db[:employee].insert(:emp_no => 10, :first_name => '2', :last_name => 'user', :updated_at => now - 1)
-      db[:employee].insert(:emp_no => 11, :first_name => '3', :last_name => 'user', :updated_at => now - 2)
-      db[:employee].insert(:emp_no => 12, :first_name => '1', :last_name => 'user', :updated_at => now + 1)
+    context '(TIMESTAMP)' do
+
+      let(:settings) do
+        super.merge('use_column_value' => true,
+                    'tracking_column' => "updated_at",
+                    'tracking_column_type' => "timestamp",
+                    'jdbc_default_timezone' => "Europe/Paris", # ENV["TZ"] is "Etc/UTC"
+                    'schedule' => "*/1 * * * * *", # every second
+                    'last_run_metadata_path' => last_run_metadata_file.path,
+                    'statement' => "SELECT * FROM employee WHERE updated_at IS NOT NULL "+
+                                   "AND updated_at > :sql_last_value ORDER BY updated_at")
+      end
+
+      it "should populate the event with database entries" do
+        Thread.start { plugin.run(queue) }
+
+        sleep(1.5)
+
+        expect( queue.size ).to be >= 3
+        event = queue.pop
+        expect(event.get('first_name')).to eq("David")
+        event = queue.pop
+        expect(event.get('first_name')).to eq("Mark")
+        event = queue.pop
+        expect(event.get('first_name')).to eq("Ján")
+        expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
+
+        expect( last_run_value = read_last_run_metadata_yaml ).to be >= DateTime.new(2000)
+        expect( last_run_value.zone ).to eql '+00:00'
+
+        begin
+          delete_test_employee_data!(plugin.database)
+          insert_test_employee_data!(plugin.database, now = Time.now, :updated_at)
+
+          sleep(1.0)
+
+          expect( queue.size ).to eql 3
+
+          event = queue.pop
+          expect(event.get('first_name')).to eq("3")
+          event = queue.pop
+          expect(event.get('first_name')).to eq("2")
+          event = queue.pop
+          expect(event.get('first_name')).to eq("1")
+
+          # e.g. #<DateTime: 2020-11-17T10:03:17+00:00 ...>
+          expect( read_last_run_metadata_yaml ).to be > last_run_value
+          expect( read_last_run_metadata_yaml.to_time ).to be > now
+
+        ensure
+          delete_test_employee_data!(plugin.database)
+        end
+      end
+
+    end
+
+    def insert_test_employee_data!(db, now, row)
+      db[:employee].insert(:emp_no => 10, :first_name => '2', :last_name => 'user', row => now - 1)
+      db[:employee].insert(:emp_no => 11, :first_name => '3', :last_name => 'user', row => now - 2)
+      db[:employee].insert(:emp_no => 12, :first_name => '1', :last_name => 'user', row => now + 1)
     end
 
     def delete_test_employee_data!(db)

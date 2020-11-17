@@ -53,11 +53,11 @@ CREATE TABLE employee (
     emp_no integer NOT NULL,
     first_name VARCHAR (50) NOT NULL,
     last_name VARCHAR (50) NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMPTZ
+    created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    updated_at TIMESTAMP
 );
 
-INSERT INTO employee VALUES (1, 'David', 'Blenkinsop', NOW(), NOW()::TIMESTAMP);
-INSERT INTO employee VALUES (2, 'Mark',  'Guckenheimer', NOW(), NOW()::TIMESTAMP);
-INSERT INTO employee VALUES (3, 'Ján', 'Borůvka', NULL, NOW()::TIMESTAMP);
-INSERT INTO employee VALUES (4, 'Jožko', 'Šuška', NULL, NULL);
+INSERT INTO employee VALUES (1, 'David', 'Blenkinsop', '2000-01-02', NOW()::TIMESTAMP);
+INSERT INTO employee VALUES (2, 'Mark',  'Guckenheimer', '2000-01-01', NOW()::TIMESTAMP);
+INSERT INTO employee VALUES (3, 'Ján', 'Borůvka', '2000-02-01', NOW()::TIMESTAMP);
+INSERT INTO employee VALUES (4, 'Jožko', 'Šuška', '2010-01-01', NULL);
