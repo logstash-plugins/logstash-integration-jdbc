@@ -5,4 +5,4 @@ set -ex
 
 export USER='logstash'
 
-bundle exec rspec spec && bundle exec rspec spec --tag integration
+jruby -rbundler/setup -S rspec -fd && jruby -rbundler/setup -S rspec -fd --tag integration
