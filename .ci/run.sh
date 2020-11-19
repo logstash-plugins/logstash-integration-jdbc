@@ -5,4 +5,6 @@ set -ex
 
 export USER='logstash'
 
+export LOG_LEVEL='trace'
+
 jruby -rbundler/setup -S rspec -fd && jruby -rbundler/setup -S rspec -fd --tag integration
