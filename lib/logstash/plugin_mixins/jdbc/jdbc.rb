@@ -199,6 +199,7 @@ module LogStash  module PluginMixins module Jdbc
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
+          @logger.trace? && @logger.trace("result row:", row)
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
