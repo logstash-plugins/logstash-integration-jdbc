@@ -1143,7 +1143,8 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should report the statements to logging" do
-      expect(plugin.logger).to receive(:debug).once
+      expect(plugin.logger).to receive(:debug).with(/.*? SELECT \* from test_table/).once
+      expect(plugin.logger).to receive(:debug).with(any_args)
       plugin.run(queue)
     end
   end
