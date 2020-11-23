@@ -3,7 +3,15 @@
 module LogStash module PluginMixins module Jdbc
   class StatementHandler
     def self.build_statement_handler(plugin, logger)
-      klass = plugin.use_prepared_statements ? PreparedStatementHandler : NormalStatementHandler
+      if plugin.use_prepared_statements
+        klass = PreparedStatementHandler
+      else
+        if plugin.jdbc_paging_enabled
+          klass = PagingStatementHandler
+        else
+          klass = NormalStatementHandler
+        end
+      end
       klass.new(plugin, logger)
     end
 
@@ -29,18 +37,10 @@ module LogStash module PluginMixins module Jdbc
     # @param db [Sequel::Database]
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
+    def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
-      if jdbc_paging_enabled
-        query.each_page(jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
-            yield row
-          end
-        end
-      else
-        query.each do |row|
-          yield row
-        end
+      query.each do |row|
+        yield row
       end
     end
 
@@ -67,6 +67,24 @@ module LogStash module PluginMixins module Jdbc
     end
   end
 
+  class PagingStatementHandler < NormalStatementHandler
+
+    def initialize(plugin, statement_logger)
+      super(plugin, statement_logger)
+      @page_size = plugin.jdbc_page_size
+    end
+
+    def perform_query(db, sql_last_value)
+      query = build_query(db, sql_last_value)
+      query.each_page(@page_size) do |paged_dataset|
+        paged_dataset.each do |row|
+          yield row
+        end
+      end
+    end
+
+  end
+
   class PreparedStatementHandler < StatementHandler
     attr_reader :name, :bind_values_array, :statement_prepared, :prepared
 
@@ -74,7 +92,7 @@ module LogStash module PluginMixins module Jdbc
     # @param db [Sequel::Database]
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
+    def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
       query.each do |row|
         yield row
@@ -85,15 +103,15 @@ module LogStash module PluginMixins module Jdbc
 
     def build_query(db, sql_last_value)
       @parameters = create_bind_values_hash
-      if statement_prepared.false?
+      if @statement_prepared.false?
         prepended = parameters.keys.map{|v| v.to_s.prepend("$").to_sym}
         @prepared = db[statement, *prepended].prepare(:select, name)
-        statement_prepared.make_true
+        @statement_prepared.make_true
       end
       # under the scheduler the Sequel database instance is recreated each time
       # so the previous prepared statements are lost, add back
       if db.prepared_statement(name).nil?
-        db.set_prepared_statement(name, prepared)
+        db.set_prepared_statement(name, @prepared)
       end
       bind_value_sql_last_value(sql_last_value)
       statement_logger.log_statement_parameters(statement, parameters, nil)
@@ -102,7 +120,7 @@ module LogStash module PluginMixins module Jdbc
       rescue => e
         # clear the statement prepared flag - the statement may be closed by this
         # time.
-        statement_prepared.make_false
+        @statement_prepared.make_false
         raise e
       end
     end
