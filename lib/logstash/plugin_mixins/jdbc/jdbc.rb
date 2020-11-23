@@ -134,7 +134,6 @@ module LogStash  module PluginMixins module Jdbc
 
     def open_jdbc_connection
       # at this point driver is already loaded
-      Sequel.application_timezone = @plugin_timezone.to_sym
 
       @database = jdbc_connect()
       @database.extension(:pagination)

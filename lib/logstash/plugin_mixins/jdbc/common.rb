@@ -18,10 +18,6 @@ module LogStash module PluginMixins module Jdbc
     def load_driver
       return @driver_impl if @driver_impl ||= nil
 
-      require "java"
-      require "sequel"
-      require "sequel/adapters/jdbc"
-
       load_driver_jars
       begin
         @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)

@@ -260,6 +260,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
+
+    require "sequel"
+    require "sequel/adapters/jdbc"
+
+    Sequel.application_timezone = @plugin_timezone.to_sym
   end # def register
 
   # test injection points
