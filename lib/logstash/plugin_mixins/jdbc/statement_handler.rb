@@ -86,7 +86,7 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class PreparedStatementHandler < StatementHandler
-    attr_reader :name, :bind_values_array, :statement_prepared, :prepared
+    attr_reader :name
 
     # Performs the query, ignoring our pagination settings, yielding once per row of data
     # @param db [Sequel::Database]
@@ -102,9 +102,8 @@ module LogStash module PluginMixins module Jdbc
     private
 
     def build_query(db, sql_last_value)
-      @parameters = create_bind_values_hash
       if @statement_prepared.false?
-        prepended = parameters.keys.map{|v| v.to_s.prepend("$").to_sym}
+        prepended = parameters.keys.map { |v| v.to_s.prepend('$').to_sym }
         @prepared = db[statement, *prepended].prepare(:select, name)
         @statement_prepared.make_true
       end
@@ -113,7 +112,7 @@ module LogStash module PluginMixins module Jdbc
       if db.prepared_statement(name).nil?
         db.set_prepared_statement(name, @prepared)
       end
-      bind_value_sql_last_value(sql_last_value)
+      bind_sql_last_value_parameter(sql_last_value)
       statement_logger.log_statement_parameters(statement, parameters, nil)
       begin
         db.call(name, parameters)
@@ -131,24 +130,17 @@ module LogStash module PluginMixins module Jdbc
       @statement_logger.disable_count
 
       @name = plugin.prepared_statement_name.to_sym
-      @bind_values_array = plugin.prepared_statement_bind_values
-      @parameters = plugin.parameters
+      @parameters = {} # plugin.parameters are ignored in favor of prepared_statement_bind_values
+      plugin.prepared_statement_bind_values.each_with_index { |v,i| @parameters[:"p#{i}"] = v }
+
+      sql_last_value_pair = @parameters.find { |_, value| value == ":sql_last_value" }
+      @sql_last_value_key = sql_last_value_pair ? sql_last_value_pair.first : nil
+
       @statement_prepared = Concurrent::AtomicBoolean.new(false)
     end
 
-    def create_bind_values_hash
-      hash = {}
-      bind_values_array.each_with_index {|v,i| hash[:"p#{i}"] = v}
-      hash
-    end
-
-    def bind_value_sql_last_value(sql_last_value)
-      parameters.keys.each do |key|
-        value = parameters[key]
-        if value == ":sql_last_value"
-          parameters[key] = sql_last_value
-        end
-      end
+    def bind_sql_last_value_parameter(sql_last_value)
+      parameters[@sql_last_value_key] = sql_last_value if @sql_last_value_key
     end
   end
 end end end
