@@ -22,7 +22,7 @@ module LogStash module PluginMixins module Jdbc
       begin
         @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
       rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
-        # fix this !!!
+        @logger.debug("driver loading failed", :exception => e.class, :message => e.message)
         message = if jdbc_driver_library_set?
                     "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
                   else
