@@ -209,7 +209,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
-  attr_reader :database # for test mocking/stubbing
+  attr_reader :database, :value_tracker # for test mocking/stubbing
 
   public
 
@@ -260,6 +260,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
+
+    require "sequel"
+    require "sequel/adapters/jdbc"
+
+    Sequel.application_timezone = @plugin_timezone.to_sym
   end # def register
 
   # test injection points
@@ -268,6 +273,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   def set_value_tracker(instance)
+    @logger.debug "using last run value tracker: #{instance.inspect}"
     @value_tracker = instance
   end
 

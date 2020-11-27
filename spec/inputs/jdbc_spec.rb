@@ -1097,7 +1097,7 @@ describe LogStash::Inputs::Jdbc do
     it "should raise PoolTimeout error" do
       plugin.register
       plugin.run(queue)
-      db = plugin.instance_variable_get(:@database)
+      db = plugin.database
       expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
       expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
 
@@ -1143,7 +1143,8 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should report the statements to logging" do
-      expect(plugin.logger).to receive(:debug).once
+      expect(plugin.logger).to receive(:debug).with(/.*? SELECT \* from test_table/).once
+      expect(plugin.logger).to receive(:debug).with(any_args)
       plugin.run(queue)
     end
   end

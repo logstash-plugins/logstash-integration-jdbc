@@ -134,7 +134,6 @@ module LogStash  module PluginMixins module Jdbc
 
     def open_jdbc_connection
       # at this point driver is already loaded
-      Sequel.application_timezone = @plugin_timezone.to_sym
 
       @database = jdbc_connect()
       @database.extension(:pagination)
@@ -198,7 +197,8 @@ module LogStash  module PluginMixins module Jdbc
       begin
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
+        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
+          @logger.trace? && @logger.trace("result row:", row)
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
@@ -208,6 +208,7 @@ module LogStash  module PluginMixins module Jdbc
         details[:backtrace] = e.backtrace if @logger.debug?
         @logger.warn("Exception when executing JDBC query", details)
       else
+        @logger.debug "last run value", :sql_last_value => sql_last_value
         @value_tracker.set_value(sql_last_value)
       ensure
         close_jdbc_connection

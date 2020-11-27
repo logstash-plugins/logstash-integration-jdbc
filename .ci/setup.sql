@@ -52,8 +52,12 @@ create DATABASE jdbc_input_db;
 CREATE TABLE employee (
     emp_no integer NOT NULL,
     first_name VARCHAR (50) NOT NULL,
-    last_name VARCHAR (50) NOT NULL
+    last_name VARCHAR (50) NOT NULL,
+    created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    updated_at TIMESTAMP
 );
 
-INSERT INTO employee VALUES (1, 'David', 'Blenkinsop');
-INSERT INTO employee VALUES (2, 'Mark', 'Guckenheimer');
+INSERT INTO employee VALUES (1, 'David', 'Blenkinsop', '2000-01-02', '2000-02-01 00:30:40');
+INSERT INTO employee VALUES (2, 'Mark',  'Guckenheimer', '2000-01-01', '2020-01-01 20:30:40+00');
+INSERT INTO employee VALUES (3, 'Ján', 'Borůvka', '2000-02-01', '2020-01-31 20:30:40+00');
+INSERT INTO employee VALUES (4, 'Jožko', 'Šuška', '2010-01-01', NULL);
