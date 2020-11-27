@@ -1,12 +1,13 @@
-require "logstash/devutils/rspec/spec_helper"
-require "logstash/inputs/jdbc"
+require_relative 'spec_helper'
 require 'tempfile'
 
 describe LogStash::Inputs::Jdbc, :integration => true do
   # This is a necessary change test-wide to guarantee that no local timezone
   # is picked up.  It could be arbitrarily set to any timezone, but then the test
   # would have to compensate differently.  That's why UTC is chosen.
-  ENV["TZ"] = "Etc/UTC"
+  before(:all) { ENV['TZ'] = "Etc/UTC" }
+  after(:all) { ENV['TZ'] = ENV_TZ }
+
   # For Travis and CI based on docker, we source from ENV
   jdbc_connection_string = ENV.fetch("PG_CONNECTION_STRING",
                                      "jdbc:postgresql://postgresql:5432") + "/jdbc_input_db?user=postgres"
@@ -84,7 +85,8 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     end
 
     after do
-      last_run_metadata_file.close
+      last_run_metadata_file.close rescue nil
+      File.unlink(last_run_metadata_file.path) rescue nil
       plugin.stop
     end
 
@@ -164,34 +166,50 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       it "should populate the event with database entries" do
         Thread.start { plugin.run(queue) }
 
-        sleep(1.5)
+        sleep(1.75)
 
-        expect( queue.size ).to be >= 3
+        expect( queue.size ).to be 3
         event = queue.pop
         expect(event.get('first_name')).to eq("David")
         event = queue.pop
         expect(event.get('first_name')).to eq("Mark")
         event = queue.pop
         expect(event.get('first_name')).to eq("Ján")
-        expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
 
-        expect( last_run_value = read_last_run_metadata_yaml ).to be >= DateTime.new(2000)
-        expect( last_run_value.zone ).to eql '+00:00'
+        if ENV['TZ'].nil? && Time.new.utc_offset == 60 * 60
+          # for local TZ != UTC this gets adjusted: 2000-01-31T23:00:00.000Z
+          expect(event.get('created_at').to_s).to eql '2000-01-31T23:00:00.000Z'
+          # expect(event.get('updated_at').to_s).to eql '2020-01-31T19:30:40.000Z' # DateTime -> 2020-01-31T20:30:40.000Z
+        else # assume TZ = UTC
+          expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
+        end
+
+        last_run_value = read_last_run_metadata_yaml
+        puts "(1) last_run_value: #{last_run_value.inspect} - #{last_run_value.class}" # 2020-01-31 19:30:40 UTC - Time
+
+        expect( last_run_value.to_datetime ).to be >= DateTime.new(2020, 01, 31, 19, 30, 40)
+        expect( last_run_value.to_datetime.zone ).to eql '+00:00'
 
         begin
           delete_test_employee_data!(plugin.database)
           insert_test_employee_data!(plugin.database, now = Time.now, :updated_at)
+          plugin.database.run "INSERT INTO employee VALUES (42, '42', 'user', CURRENT_DATE, '2020-01-31 20:32:40')"
 
           sleep(1.0)
 
-          expect( queue.size ).to eql 3
+          expect( queue.size ).to eql 4
 
+          event = queue.pop
+          expect(event.get('first_name')).to eq("42")
           event = queue.pop
           expect(event.get('first_name')).to eq("3")
           event = queue.pop
           expect(event.get('first_name')).to eq("2")
           event = queue.pop
           expect(event.get('first_name')).to eq("1")
+
+          last_run_value2 = read_last_run_metadata_yaml
+          puts "(2) last_run_value: #{last_run_value2.inspect} - #{last_run_value2.class}" # ??? 2020-01-31 20:30:40 +0000 - Time
 
           # e.g. #<DateTime: 2020-11-17T10:03:17+00:00 ...>
           expect( read_last_run_metadata_yaml ).to be > last_run_value
