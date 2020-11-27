@@ -85,9 +85,9 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     end
 
     after do
+      plugin.stop
       last_run_metadata_file.close rescue nil
       File.unlink(last_run_metadata_file.path) rescue nil
-      plugin.stop
     end
 
     context '(DATE)' do
@@ -118,10 +118,10 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         event = queue.pop
         expect(event.get('first_name')).to eq("Jožko")
 
-        expect( last_run_value = read_last_run_metadata_yaml ).to be >= DateTime.new(2010)
+        expect( last_run_value = read_yaml(last_run_metadata_file.path) ).to be >= DateTime.new(2010)
         expect( last_run_value.zone ).to eql '+00:00'
 
-        expect( queue.size ).to be 0
+        expect( queue.size ).to be(0), lambda { "queue wasn't empty, size: #{queue.size} - #{queue.pop.to_hash}" }
 
         begin
           delete_test_employee_data!(plugin.database)
@@ -140,8 +140,8 @@ describe LogStash::Inputs::Jdbc, :integration => true do
           # event = queue.pop
           # expect(event.get('first_name')).to eq("1")
 
-          expect( read_last_run_metadata_yaml ).to be > last_run_value
-          expect( read_last_run_metadata_yaml ).to be > now
+          expect( read_yaml(last_run_metadata_file.path) ).to be > last_run_value
+          expect( read_yaml(last_run_metadata_file.path) ).to be > now
 
         ensure
           delete_test_employee_data!(plugin.database)
@@ -184,7 +184,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
           expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
         end
 
-        last_run_value = read_last_run_metadata_yaml
+        last_run_value = read_yaml last_run_metadata_file.path
         puts "(1) last_run_value: #{last_run_value.inspect} - #{last_run_value.class}" # 2020-01-31 19:30:40 UTC - Time
 
         expect( last_run_value.to_datetime ).to be >= DateTime.new(2020, 01, 31, 19, 30, 40)
@@ -208,12 +208,12 @@ describe LogStash::Inputs::Jdbc, :integration => true do
           event = queue.pop
           expect(event.get('first_name')).to eq("1")
 
-          last_run_value2 = read_last_run_metadata_yaml
-          puts "(2) last_run_value: #{last_run_value2.inspect} - #{last_run_value2.class}" # ??? 2020-01-31 20:30:40 +0000 - Time
+          last_run_value2 = read_yaml last_run_metadata_file.path
+          puts "(2) last_run_value: #{last_run_value2.inspect} - #{last_run_value2.class}" # 2020-01-31 20:30:40 +0000 - Time
 
           # e.g. #<DateTime: 2020-11-17T10:03:17+00:00 ...>
-          expect( read_last_run_metadata_yaml ).to be > last_run_value
-          expect( read_last_run_metadata_yaml.to_time ).to be > now
+          expect( last_run_value2 ).to be > last_run_value
+          expect( last_run_value2.to_time ).to be > now
 
         ensure
           delete_test_employee_data!(plugin.database)
@@ -230,16 +230,6 @@ describe LogStash::Inputs::Jdbc, :integration => true do
 
     def delete_test_employee_data!(db)
       db[:employee].where(:last_name => 'user').delete
-    end
-
-    def read_last_run_metadata_yaml
-      # "--- !ruby/object:DateTime '2020-11-17 07:56:23.978705000 Z'\n"
-      YAML.load(File.read(last_run_metadata_file.path))
-    end
-
-    def env_zone_utc?
-      # we allow (local) testing with skipping the forced ENV['TZ'] = ...
-      ENV['TZ'] == "Etc/UTC"
     end
 
   end
