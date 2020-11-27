@@ -5,8 +5,8 @@ describe LogStash::Inputs::Jdbc, :integration => true do
   # This is a necessary change test-wide to guarantee that no local timezone
   # is picked up.  It could be arbitrarily set to any timezone, but then the test
   # would have to compensate differently.  That's why UTC is chosen.
-  before(:all) { ENV['TZ'] = "Etc/UTC" }
-  after(:all) { ENV['TZ'] = ENV_TZ }
+  before(:all) { ENV['TZ'] = "Etc/UTC" } unless ENV['KEEP_TZ'] == 'true'
+  after(:all) { ENV['TZ'] = ENV_TZ } unless ENV['KEEP_TZ'] == 'true'
 
   # For Travis and CI based on docker, we source from ENV
   jdbc_connection_string = ENV.fetch("PG_CONNECTION_STRING",
@@ -105,7 +105,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       it "should populate the event with database entries" do
         Thread.start { plugin.run(queue) }
 
-        sleep(2.5)
+        sleep(3.0)
 
         expect( queue.size ).to be >= 4
         event = queue.pop
@@ -114,7 +114,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         expect(event.get('first_name')).to eq("David")
         event = queue.pop
         expect(event.get('first_name')).to eq("Ján")
-        expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z'
+        expect(event.get('created_at').to_s).to eql '2000-02-01T00:00:00.000Z' if env_zone_utc?
         event = queue.pop
         expect(event.get('first_name')).to eq("Jožko")
 
@@ -127,7 +127,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
           delete_test_employee_data!(plugin.database)
           insert_test_employee_data!(plugin.database, now = Date.today, :created_at)
 
-          sleep(2.0)
+          sleep(2.5)
 
           # TODO will return "emp_no" => 4 ("Jožko") again
           # due SELECT * FROM employee WHERE created_at > '2009-12-31 19:00:00.000000-0500'
@@ -235,6 +235,11 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     def read_last_run_metadata_yaml
       # "--- !ruby/object:DateTime '2020-11-17 07:56:23.978705000 Z'\n"
       YAML.load(File.read(last_run_metadata_file.path))
+    end
+
+    def env_zone_utc?
+      # we allow (local) testing with skipping the forced ENV['TZ'] = ...
+      ENV['TZ'] == "Etc/UTC"
     end
 
   end
