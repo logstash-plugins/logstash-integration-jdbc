@@ -422,7 +422,7 @@ according to the table below.
 |=======================================================================
 |Setting |Input type|Required
 | id|string|No
-| table|string|Yes
+| local_table|string|Yes
 | query|string|Yes
 | max_rows|number|No
 | jdbc_connection_string|string|No
@@ -438,7 +438,7 @@ id::
 An optional identifier. This is used to identify the loader that is
 generating error messages and log lines.
 
-table::
+local_table::
 The destination table in the local lookup database that the loader will fill.
 
 query::
