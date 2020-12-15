@@ -110,7 +110,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-statement>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-tag_on_default_use>> |<<array,array>>|No
 | <<plugins-{type}s-{plugin}-tag_on_failure>> |<<array,array>>|No
-| <<plugins-{type}s-{plugin}-target>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-target>> |<<field-reference,field-reference>>|Yes
 | <<plugins-{type}s-{plugin}-use_cache>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-use_prepared_statements>> |<<boolean,boolean>>|No
 |=======================================================================
@@ -292,7 +292,7 @@ Append values to the `tags` field if sql error occurred.
 ===== `target`
 
   * This is a required setting.
-  * Value type is <<string,string>>
+  * Value type is <<field-reference,field-reference>>
   * There is no default value for this setting.
 
 Define the target field to store the extracted result(s).
