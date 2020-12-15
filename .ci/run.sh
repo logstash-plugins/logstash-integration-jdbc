@@ -5,4 +5,5 @@ set -ex
 
 export USER='logstash'
 
-bundle exec rspec spec && bundle exec rspec spec --tag integration
+bundle exec rspec spec --format documentation
+bundle exec rspec spec --tag integration --format documentation
