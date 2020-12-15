@@ -3,6 +3,7 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
+require 'logstash/plugin_mixins/ecs_compatibility_support'
 require 'logstash/plugin_mixins/validator_support/field_reference_validation_adapter'
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
@@ -130,6 +131,7 @@ require_relative "tzinfo_jruby_patch"
 module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
 
+  include LogStash::PluginMixins::ECSCompatibilitySupport
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
   config_name "jdbc"
@@ -265,6 +267,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converter.logger = self.logger
         converters[encoding] = converter
       end
+    end
+
+    if target.nil? && ecs_compatibility != :disabled
+      logger.warn("The JDBC Input is configured to run in ECS Compatibility mode `#{ecs_compatibility}`, but without a specified `target`. " +
+                  "Fields from your SQL query will be added directly to the root level of Events emitted by this input; " +
+                  "depending on the shape of your SQL query, this may produce events that clash with the Elastic Common Schema." +
+                  "To resolve, either provide a `target` or specify `ecs_compatibility => disabled`.")
     end
   end # def register
 

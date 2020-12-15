@@ -1391,6 +1391,23 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context 'when `target` is unspecified and `ecs_compatibilty` is requested' do
+    before(:each) do
+      allow(plugin).to receive(:logger).and_return(double('Logger').as_null_object)
+    end
+    let(:settings) do
+      {
+        "statement" => "SELECT * from types_table",
+        "ecs_compatibility" => "v1"
+      }
+    end
+    it 'emits a log warning when registered' do
+      plugin.register
+
+      expect(plugin.logger).to have_received(:warn).with(/ECS Compatibility mode/)
+    end
+  end
+
   context "when debug logging and a count query raises a count related error" do
     let(:settings) do
       { "statement" => "SELECT * from types_table" }

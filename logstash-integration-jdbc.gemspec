@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
   s.add_runtime_dependency 'logstash-mixin-validator_support', '~> 1.0'
+  s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~> 1.0'
   # Restrict use of this plugin to versions of Logstash where support for integration plugins is present.
   s.add_runtime_dependency "logstash-core", ">= 6.5.0"
   s.add_runtime_dependency 'logstash-codec-plain'

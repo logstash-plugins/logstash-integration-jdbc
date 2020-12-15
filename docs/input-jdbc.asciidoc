@@ -173,6 +173,16 @@ input {
 }
 ---------------------------------------------------------------------------------------------------
 
+==== Compatibility with the Elastic Common Schema (ECS)
+
+This plugin will produce events to your pipeline in the shape produced by
+your SQL query, and on its own doesn't ensure compatibility with ECS. To
+make it easier to produce ECS-compliant events, a pipeline can specify a
+<<plugins-{type}s-{plugin}-target>> field in which to place the raw record.
+
+When run in an <<plugins-{type}s-{plugin}-ecs_compatibility>> mode, this
+input will emit a log warning of the risk unless a <<plugins-{type}s-{plugin}-target>>
+is specified.
 
 [id="plugins-{type}s-{plugin}-options"]
 ==== Jdbc Input Configuration Options
@@ -186,6 +196,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-columns_charset>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-connection_retry_attempts>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-connection_retry_attempts_wait_time>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-ecs_compatibility>> | <<string,string>>|No
 | <<plugins-{type}s-{plugin}-jdbc_connection_string>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-jdbc_default_timezone>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-jdbc_driver_class>> |<<string,string>>|Yes
@@ -268,6 +279,17 @@ Maximum number of times to try connecting to database
   * Default value is `0.5`
 
 Number of seconds to sleep between connection attempts
+
+[id="plugins-{type}s-{plugin}-ecs_compatibility"]
+===== `ecs_compatibility`
+
+* Value type is <<string,string>>
+* Supported values are:
+** `disabled`: no schema help is offered
+** `v1`: logs a helpful warning on startup unless <<plugins-{type}s-{plugin}-target>> is specified
+* Default value depends on which version of Logstash is running:
+** When Logstash provides a `pipeline.ecs_compatibility` setting, its value is used as the default
+** Otherwise, the default value is `disabled`.
 
 [id="plugins-{type}s-{plugin}-jdbc_connection_string"]
 ===== `jdbc_connection_string`
