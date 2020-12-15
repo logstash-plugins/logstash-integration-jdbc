@@ -1358,6 +1358,39 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when using `target` config" do
+    let(:target) { "[@metadata][jdbc_raw]" }
+    let(:settings) do
+      {
+        "statement" => "SELECT * from types_table",
+        "target" => target,
+      }
+    end
+    before do
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should place all columns in the target field" do
+      plugin.run(queue)
+      event = queue.pop
+      aggregate_failures('the resulting event') do
+        expect(event.get("[#{target}][num]")).to eq(1)
+        expect(event.get("[#{target}][string]")).to eq("A test")
+        expect(event.get("[#{target}][started_at]")).to be_a(LogStash::Timestamp)
+        expect(event.get("[#{target}][started_at]").to_s).to eq("1999-12-31T00:00:00.000Z")
+        expect(event.get("[#{target}][custom_time]")).to be_a(LogStash::Timestamp)
+        expect(event.get("[#{target}][custom_time]").to_s).to eq("1999-12-31T23:59:59.000Z")
+        expect(event.get("[#{target}][ranking]").to_f).to eq(95.67)
+      end
+    end
+  end
+
   context "when debug logging and a count query raises a count related error" do
     let(:settings) do
       { "statement" => "SELECT * from types_table" }

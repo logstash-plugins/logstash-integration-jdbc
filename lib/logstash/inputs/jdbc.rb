@@ -3,6 +3,7 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
+require 'logstash/plugin_mixins/validator_support/field_reference_validation_adapter'
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
 require_relative "tzinfo_jruby_patch"
@@ -127,6 +128,8 @@ require_relative "tzinfo_jruby_patch"
 # ---------------------------------------------------------------------------------------------------
 #
 module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
+  extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
+
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
   config_name "jdbc"
@@ -160,6 +163,9 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # There is no schedule by default. If no schedule is given, then the statement is run
   # exactly once.
   config :schedule, :validate => :string
+
+  # If set, the fields from each record will be added nested under the target instead of at the top-level
+  config :target, :valiadte => :field_reference
 
   # Path to file with last run time
   config :last_run_metadata_path, :validate => :string, :default => "#{ENV['HOME']}/.logstash_jdbc_last_run"
@@ -318,7 +324,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         ## do the necessary conversions to string elements
         row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]
       end
-      event = LogStash::Event.new(row)
+      event = create_targeted_event(row)
       decorate(event)
       queue << event
     end
@@ -326,6 +332,14 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   private
+
+  def create_targeted_event(row)
+    return LogStash::Event.new(row) unless @target
+
+    event = LogStash::Event.new
+    event.set(@target, row)
+    event
+  end
 
   def enable_encoding?
     @enable_encoding
