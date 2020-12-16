@@ -1,3 +1,11 @@
+## 5.1.0
+  - ECS Compatibility Improvements [#57](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/57)
+    - JDBC Input:
+      - Added `target` option, making it easier for users to avoid populating the top-level namespace of events.
+      - Added helpful warning for instances of this plugin that are run in an ECS-compatibility mode without specifying a `target`, since this configuration is likely to cause events to violate the Elastic Common Schema.
+    - JDBC Streaming Filter:
+      - Fixed validation of existing `target` option to occur before plugin starts up, preventing runtime crashes that would occur when an invalid field reference was supplied
+
 ## 5.0.6
   - DOC:Replaced plugin_header file with plugin_header-integration file. [#40](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/40)
 

@@ -347,5 +347,22 @@ module LogStash module Filters
       end
     end
 
+    describe "using `target` parameter" do
+      let(:settings) do
+        {
+          "statement" => "SELECT 1",
+          "target" => target,
+          "jdbc_user" => ENV['USER'],
+          "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+          "jdbc_connection_string" => jdbc_connection_string,
+        }
+      end
+      context 'when target is not a valid field reference' do
+        let(:target) { '][ |\| \/ /\ |_ ][ [)' }
+        it 'refuses to register the plugin' do
+          expect { JdbcStreaming.new(settings) }.to raise_exception(LogStash::ConfigurationError)
+        end
+      end
+    end
   end
 end end

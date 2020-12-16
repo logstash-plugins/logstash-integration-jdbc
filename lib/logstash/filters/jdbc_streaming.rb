@@ -6,6 +6,7 @@ require "logstash/plugin_mixins/jdbc_streaming"
 require "logstash/plugin_mixins/jdbc_streaming/cache_payload"
 require "logstash/plugin_mixins/jdbc_streaming/statement_handler"
 require "logstash/plugin_mixins/jdbc_streaming/parameter_handler"
+require 'logstash/plugin_mixins/validator_support/field_reference_validation_adapter'
 require "lru_redux"
 
 # This filter executes a SQL query and store the result set in the field
@@ -47,6 +48,8 @@ require "lru_redux"
 # }
 #
 module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
+  extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
+
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::JdbcStreaming
 
@@ -61,7 +64,7 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
 
   # Define the target field to store the extracted result(s)
   # Field is overwritten if exists
-  config :target, :validate => :string, :required => true
+  config :target, :validate => :field_reference, :required => true
 
   # Define a default object to use when lookup fails to return a matching row.
   # ensure that the key names of this object match the columns from the statement
