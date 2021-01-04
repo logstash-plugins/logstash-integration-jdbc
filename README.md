@@ -2,7 +2,7 @@
 Logstash Integration Plugin for JDBC, including Logstash Input and Filter Plugins
 # Logstash Plugin
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc.svg)](https://travis-ci.org/logstash-plugins/logstash-integration-jdbc)
+[![Travis Build Status](https://travis-ci.com/logstash-plugins/logstash-integration-jdbc.svg)](https://travis-ci.com/logstash-plugins/logstash-integration-jdbc)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
