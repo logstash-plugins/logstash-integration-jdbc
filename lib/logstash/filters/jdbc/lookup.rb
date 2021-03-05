@@ -82,10 +82,11 @@ module LogStash module Filters module Jdbc
 
     def enhance(local, event)
       if @prepared_statement
-        result = call_prepared(local, event)
+        load_method_ref = method(:load_data_from_prepared)
       else
-        result = fetch(local, event) # should return a LookupResult
+        load_method_ref = method(:load_data_from_local)
       end
+      result = retrieve_local_data(local, event, &load_method_ref) # should return a LookupResult
       if result.failed? || result.parameters_invalid?
         tag_failure(event)
       end
@@ -128,34 +129,23 @@ module LogStash module Filters module Jdbc
       end
     end
 
-    def fetch(local, event)
-      result = LookupResult.new()
-      if @parameters_specified
-        params = prepare_parameters_from_event(event, result)
-        if result.parameters_invalid?
-          logger.warn? && logger.warn("Parameter field not found in event", :lookup_id => @id, :invalid_parameters => result.invalid_parameters)
-          return result
-        end
-      else
-        params = {}
+    def load_data_from_local(local, query, params, result)
+      local.fetch(query, params).each do |row|
+        stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
+        result.push(stringified)
       end
-      begin
-        logger.debug? && logger.debug("Executing Jdbc query", :lookup_id => @id, :statement => query, :parameters => params)
-        local.fetch(query, params).each do |row|
-          stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
-          result.push(stringified)
-        end
-      rescue ::Sequel::Error => e
-        # all sequel errors are a subclass of this, let all other standard or runtime errors bubble up
-        result.failed!
-        logger.warn? && logger.warn("Exception when executing Jdbc query", :lookup_id => @id, :exception => e.message, :backtrace => e.backtrace.take(8))
-      end
-      # if either of: no records or a Sequel exception occurs the payload is
-      # empty and the default can be substituted later.
-      result
     end
 
-    def call_prepared(local, event)
+    def load_data_from_prepared(_local, _query, params, result)
+      @prepared_statement.call(params).each do |row|
+        stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
+        result.push(stringified)
+      end
+    end
+
+    # the &block is invoked with 4 arguments: local, query[String], params[Hash], result[LookupResult]
+    # the result is used as accumulator return variable
+    def retrieve_local_data(local, event, &proc)
       result = LookupResult.new()
       if @parameters_specified
         params = prepare_parameters_from_event(event, result)
@@ -168,10 +158,7 @@ module LogStash module Filters module Jdbc
       end
       begin
         logger.debug? && logger.debug("Executing Jdbc query", :lookup_id => @id, :statement => query, :parameters => params)
-        @prepared_statement.call(params).each do |row|
-          stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
-          result.push(stringified)
-        end
+        proc.call(local, query, params, result)
       rescue ::Sequel::Error => e
         # all sequel errors are a subclass of this, let all other standard or runtime errors bubble up
         result.failed!
