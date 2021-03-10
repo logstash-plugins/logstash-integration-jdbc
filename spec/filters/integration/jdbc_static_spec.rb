@@ -59,7 +59,7 @@ module LogStash module Filters
 
     let(:plugin) { JdbcStatic.new(settings) }
 
-    let(:event)      { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
+    let(:event) { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
 
     let(:ipaddr) { ".3.1.1" }
 

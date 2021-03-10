@@ -66,6 +66,7 @@ module LogStash module Filters module Jdbc
       @prepared_statement = nil
       @symbol_parameters = nil
       parse_options
+      @load_method_ref = method(:load_data_from_local)
     end
 
     def id_used_as_target?
@@ -81,12 +82,7 @@ module LogStash module Filters module Jdbc
     end
 
     def enhance(local, event)
-      if @prepared_statement
-        load_method_ref = method(:load_data_from_prepared)
-      else
-        load_method_ref = method(:load_data_from_local)
-      end
-      result = retrieve_local_data(local, event, &load_method_ref) # should return a LookupResult
+      result = retrieve_local_data(local, event, &@load_method_ref) # return a LookupResult
       if result.failed? || result.parameters_invalid?
         tag_failure(event)
       end
@@ -113,6 +109,7 @@ module LogStash module Filters module Jdbc
       @prepared_parameters.each_with_index { |v, i| hash[:"$p#{i}"] = v }
       @prepared_param_placeholder_map = hash
       @prepared_statement = local.prepare(query, hash.keys)
+      @load_method_ref = method(:load_data_from_prepared)
     end
 
     private
