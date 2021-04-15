@@ -68,6 +68,22 @@ describe LogStash::Inputs::Jdbc, :integration => true do
 
     it "should not register correctly" do
       plugin.register
+      allow( plugin ).to receive(:log_java_exception)
+      q = Queue.new
+      expect do
+        plugin.run(q)
+      end.to raise_error(::Sequel::DatabaseConnectionError)
+    end
+
+    it "should log (native) Java driver error" do
+      plugin.register
+      expect( org.apache.logging.log4j.LogManager ).to receive(:getLogger).and_wrap_original do |m, *args|
+        logger = m.call(*args)
+        expect( logger ).to receive(:error) do |_, e|
+          expect( e ).to be_a org.postgresql.util.PSQLException
+        end.and_call_original
+        logger
+      end
       q = Queue.new
       expect do
         plugin.run(q)
