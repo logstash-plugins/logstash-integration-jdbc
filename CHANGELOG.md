@@ -1,4 +1,8 @@
-## 5.y.z
+## 5.0.7
+  - Feat: try hard to log Java cause (chain) [#62](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/62)
+
+    This allows seeing a full trace from the JDBC driver in case of connection errors. 
+
   - Refactored Lookup used in jdbc_streaming and jdbc_static to avoid code duplication. [#59](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/59)
 
 ## 5.0.6
