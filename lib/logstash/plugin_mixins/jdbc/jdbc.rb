@@ -122,14 +122,30 @@ module LogStash  module PluginMixins module Jdbc
         # rescue Java::JavaSql::SQLException, ::Sequel::Error => e
         rescue ::Sequel::Error => e
           if retry_attempts <= 0
-            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message)
+            log_java_exception(e.cause)
+            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", error_details(e, trace: true))
             raise e
           else
-            @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
+            @logger.error("Unable to connect to database. Trying again", error_details(e, trace: false))
           end
         end
         sleep(@connection_retry_attempts_wait_time)
       end
+    end
+
+    def error_details(e, trace: false)
+      details = { :message => e.message, :exception => e.class }
+      details[:backtrace] = e.backtrace if trace || @logger.debug?
+      details[:cause] = e.cause if e.cause
+      details
+    end
+
+    def log_java_exception(e)
+      return unless e.is_a?(java.lang.Exception)
+      # @logger.name using the same convention as LS does
+      logger = self.class.name.gsub('::', '.').downcase
+      logger = org.apache.logging.log4j.LogManager.getLogger(logger)
+      logger.error('', e) # prints nested causes
     end
 
     def open_jdbc_connection
