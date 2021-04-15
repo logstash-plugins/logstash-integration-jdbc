@@ -135,8 +135,8 @@ module LogStash  module PluginMixins module Jdbc
 
     def error_details(e, trace: false)
       details = { :message => e.message, :exception => e.class }
-      details[:backtrace] = e.backtrace if trace || @logger.debug?
       details[:cause] = e.cause if e.cause
+      details[:backtrace] = e.backtrace if trace || @logger.debug?
       details
     end
 
