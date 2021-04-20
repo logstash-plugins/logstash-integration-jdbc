@@ -328,6 +328,33 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
+  context "when using target option" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table FETCH FIRST 1 ROWS ONLY",
+        "target" => "sub_field"
+      }
+    end
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should put all  columns under sub-field" do
+      db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc, :string => "Test target option")
+
+      plugin.run(queue)
+
+      expect(queue.size).to eq(1)
+      event = queue.pop
+      expect(event.get("[sub_field][string]")).to eq("Test target option")
+    end
+  end
+
   context "when fetching time data" do
 
     let(:settings) do

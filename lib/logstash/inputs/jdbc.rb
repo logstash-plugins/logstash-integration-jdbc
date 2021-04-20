@@ -209,6 +209,9 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
+  # Define the target field to store the loaded columns
+  config :target, :validate => :string, :required => false
+
   attr_reader :database # for test mocking/stubbing
 
   public
@@ -318,7 +321,12 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         ## do the necessary conversions to string elements
         row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]
       end
-      event = LogStash::Event.new(row)
+      if @target
+        event = LogStash::Event.new
+        event.set(@target, row)
+      else
+        event = LogStash::Event.new(row)
+      end
       decorate(event)
       queue << event
     end
