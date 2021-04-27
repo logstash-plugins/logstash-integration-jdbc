@@ -32,7 +32,7 @@ module LogStash module PluginMixins module JdbcStreaming
   public
   def setup_jdbc_config
     # JDBC driver library path to third party driver library.
-    config :jdbc_driver_library, :validate => :path
+    config :jdbc_driver_library, :validate => :string
 
     # JDBC driver class to load, for example "oracle.jdbc.OracleDriver" or "org.apache.derby.jdbc.ClientDriver"
     config :jdbc_driver_class, :validate => :string, :required => true
