@@ -103,7 +103,9 @@ A sql statement is required for this input. This can be passed-in via a
 statement option in the form of a string, or read from a file (`statement_filepath`). File
 option is typically used when the SQL statement is large or cumbersome to supply in the config.
 The file option only supports one SQL statement. The plugin will only accept one of the options.
-It cannot read a statement from a file as well as from the `statement` configuration parameter.
+It cannot read a statement from a file as well as from the `statement` configuration parameter. 
+This plugin does some modification to the supplied statement during normal operations.
+As a result, semicolon (`;`) terminated statements can throw syntax errors. 
 
 ==== Configuring multiple SQL statements
 
