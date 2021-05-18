@@ -221,7 +221,6 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   public
 
   def register
-    puts "register invoked"
     @logger = self.logger
     require "rufus/scheduler"
     prepare_jdbc_connection
@@ -271,7 +270,6 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
     # target must be populated if ecs_compatibility is not :disabled
     if @target.nil? && ecs_compatibility != :disabled
-      puts "@target is nil and ecs_compatibility: #{ecs_compatibility}"
       logger.warn("When ECS compatibility is enabled also target option must be valued")
     end
   end # def register
