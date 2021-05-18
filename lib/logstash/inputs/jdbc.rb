@@ -214,7 +214,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
   # Define the target field to store the loaded columns
-  config :target, :validate => :string, :required => false
+  config :target, :validate => :field_reference, :required => false
 
   attr_reader :database # for test mocking/stubbing
 

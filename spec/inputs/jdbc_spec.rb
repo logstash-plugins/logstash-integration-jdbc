@@ -399,6 +399,38 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when fetching row and target option is used" do
+
+      let(:settings) do
+        {
+          "statement" => "SELECT * from test_table",
+          "target" => "target_field",
+        }
+      end
+
+      let(:num_rows) { 10 }
+
+      before do
+        num_rows.times do
+          db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc, :string => "Hello")
+        end
+
+        plugin.register
+      end
+
+      after do
+        plugin.stop
+      end
+
+      it "should nest the loaded columns in target field " do
+        plugin.run(queue)
+        event = queue.pop
+
+        expect(event.get("[target_field][custom_time]")).to be_a(LogStash::Timestamp)
+        expect(event.get("[target_field][string]")).to eq("Hello")
+      end
+    end
+
   describe "when jdbc_default_timezone is set" do
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
