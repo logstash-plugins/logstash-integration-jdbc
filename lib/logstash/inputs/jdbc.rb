@@ -3,6 +3,7 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
+require "logstash/plugin_mixins/ecs_compatibility_support"
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
 require_relative "tzinfo_jruby_patch"
@@ -129,6 +130,9 @@ require_relative "tzinfo_jruby_patch"
 module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
+  # adds ecs_compatibility config which could be :disabled or :v1
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1)
+
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
@@ -217,6 +221,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   public
 
   def register
+    puts "register invoked"
     @logger = self.logger
     require "rufus/scheduler"
     prepare_jdbc_connection
@@ -262,6 +267,12 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converter.logger = self.logger
         converters[encoding] = converter
       end
+    end
+
+    # target must be populated if ecs_compatibility is not :disabled
+    if @target.nil? && ecs_compatibility != :disabled
+      puts "@target is nil and ecs_compatibility: #{ecs_compatibility}"
+      logger.warn("When ECS compatibility is enabled also target option must be valued")
     end
   end # def register
 

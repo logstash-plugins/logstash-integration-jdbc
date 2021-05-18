@@ -344,7 +344,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
-    it "should put all  columns under sub-field" do
+    it "should put all columns under sub-field" do
       db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc, :string => "Test target option")
 
       plugin.run(queue)
@@ -352,6 +352,21 @@ describe LogStash::Inputs::Jdbc do
       expect(queue.size).to eq(1)
       event = queue.pop
       expect(event.get("[sub_field][string]")).to eq("Test target option")
+    end
+  end
+
+  context "when using target option is not set and ecs_compatibility is enabled" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table FETCH FIRST 1 ROWS ONLY",
+        "ecs_compatibility" => :v1
+      }
+    end
+
+    it "should log a warn of missed target usage" do
+      expect(plugin.logger).to receive(:warn).once.with("When ECS compatibility is enabled also target option must be valued")
+
+      plugin.register
     end
   end
 
