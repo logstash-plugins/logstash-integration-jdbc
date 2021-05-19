@@ -132,7 +132,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
   # adds ecs_compatibility config which could be :disabled or :v1
-  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1)
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1,:v8 => :v1)
   # adds :field_reference validator adapter
   extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
 
