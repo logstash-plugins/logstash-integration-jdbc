@@ -56,6 +56,10 @@ module LogStash module Filters module Jdbc
       @target = options["target"]
       @id_used_as_target = @target.nil?
       if @id_used_as_target
+        # target shouldn't be nil if ecs_compatibility is not :disabled
+        if globals[:ecs_compatibility] != :disabled
+          logger.info("When ECS compatibility is enabled also target option must be valued")
+        end
         @target = @id
       end
       @options = options

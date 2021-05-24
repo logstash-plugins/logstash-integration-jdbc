@@ -248,6 +248,37 @@ module LogStash module Filters module Jdbc
         expect(subject.valid?).to be_falsey
       end
     end
+
+    describe "validation of target option" do
+      let(:lookup_hash) do
+        {
+          "query" => "select * from servers WHERE ip LIKE ? AND os LIKE ?",
+          "prepared_parameters" => ["%%{[ip]}"],
+        }
+      end
+
+      it "should log a warn when ECS is enabled and target not defined" do
+
+        class LoggableLookup < Lookup
+
+          @@TEST_LOGGER = nil
+
+          def self.logger=(log)
+            @@TEST_LOGGER = log
+          end
+
+          def self.logger
+            @@TEST_LOGGER
+          end
+        end
+
+        spy_logger = double("logger")
+        expect(spy_logger).to receive(:info).once.with("When ECS compatibility is enabled also target option must be valued")
+        LoggableLookup.logger = spy_logger
+
+        LoggableLookup.new(lookup_hash, {:ecs_compatibility => 'v1'}, "lookup-1")
+      end
+    end
   end
 end end end
 
