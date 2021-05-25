@@ -16,7 +16,7 @@ require_relative "jdbc/lookup_processor"
 #
 module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   # adds ecs_compatibility config which could be :disabled or :v1
-  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1)
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
 
   config_name "jdbc_static"
 

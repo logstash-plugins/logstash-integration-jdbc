@@ -273,7 +273,7 @@ module LogStash module Filters module Jdbc
         end
 
         spy_logger = double("logger")
-        expect(spy_logger).to receive(:info).once.with("When ECS compatibility is enabled also target option must be valued")
+        expect(spy_logger).to receive(:info).once.with(/ECS compatibility is enabled but no .*?target.*? was specified/)
         LoggableLookup.logger = spy_logger
 
         LoggableLookup.new(lookup_hash, {:ecs_compatibility => 'v1'}, "lookup-1")
