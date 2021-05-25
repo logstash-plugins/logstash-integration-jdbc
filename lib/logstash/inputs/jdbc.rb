@@ -3,6 +3,8 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
+require "logstash/plugin_mixins/ecs_compatibility_support"
+require "logstash/plugin_mixins/validator_support/field_reference_validation_adapter"
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
 require_relative "tzinfo_jruby_patch"
@@ -129,6 +131,11 @@ require_relative "tzinfo_jruby_patch"
 module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc::Common
   include LogStash::PluginMixins::Jdbc::Jdbc
+  # adds ecs_compatibility config which could be :disabled or :v1
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1,:v8 => :v1)
+  # adds :field_reference validator adapter
+  extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
+
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
@@ -209,6 +216,9 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
+  # Define the target field to store the loaded columns
+  config :target, :validate => :field_reference, :required => false
+
   attr_reader :database # for test mocking/stubbing
 
   public
@@ -259,6 +269,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converter.logger = self.logger
         converters[encoding] = converter
       end
+    end
+
+    # target must be populated if ecs_compatibility is not :disabled
+    if @target.nil? && ecs_compatibility != :disabled
+      logger.info('ECS compatibility is enabled but no ``target`` option was specified, it is recommended'\
+                  ' to set the option to avoid potential schema conflicts (if your data is ECS compliant or'\
+                  ' non-conflicting feel free to ignore this message)')
     end
   end # def register
 
@@ -318,7 +335,12 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         ## do the necessary conversions to string elements
         row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]
       end
-      event = LogStash::Event.new(row)
+      if @target
+        event = LogStash::Event.new
+        event.set(@target, row)
+      else
+        event = LogStash::Event.new(row)
+      end
       decorate(event)
       queue << event
     end

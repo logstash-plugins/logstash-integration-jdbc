@@ -1,3 +1,8 @@
+## 5.1.0
+  - Added `target` option to JDBC input, allowing the row columns to target a specific field instead of being expanded 
+    at the root of the event. This allows the input to play nicer with the Elastic Common Schema when 
+    the input does not follow the schema. [#69](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/69)
+
 ## 5.0.7
   - Feat: try hard to log Java cause (chain) [#62](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/62)
 
