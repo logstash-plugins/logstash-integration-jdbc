@@ -218,7 +218,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     options["lookup_jdbc_driver_class"] = @lookup_jdbc_driver_class
     options["lookup_jdbc_driver_library"] = @lookup_jdbc_driver_library
     options["lookup_jdbc_connection_string"] = @lookup_jdbc_connection_string
-    options["ecs_compatibility"] = @ecs_compatibility
+    options["ecs_compatibility"] = ecs_compatibility
     options
   end
 
