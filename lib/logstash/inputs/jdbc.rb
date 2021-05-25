@@ -274,7 +274,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     # target must be populated if ecs_compatibility is not :disabled
     if @target.nil? && ecs_compatibility != :disabled
       logger.info('ECS compatibility is enabled but no ``target`` option was specified, it is recommended'\
-                  ' to set the option to avoid potential schema conflicts (if you\'re data is ECS compliant or'\
+                  ' to set the option to avoid potential schema conflicts (if your data is ECS compliant or'\
                   ' non-conflicting feel free to ignore this message)')
     end
   end # def register
