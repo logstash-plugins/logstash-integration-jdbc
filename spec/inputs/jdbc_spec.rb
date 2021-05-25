@@ -365,8 +365,6 @@ describe LogStash::Inputs::Jdbc do
 
     it "should log a warn of missed target usage" do
       expect(plugin.logger).to receive(:info).once.with(/ECS compatibility is enabled but no .*?target.*? was specified/)
-            ' option was specified, it is recommended to set the option to avoid potential schema conflicts' \
-            ' (if you\'re data is ECS compliant or non-conflicting feel free to ignore this message)')
 
       plugin.register
     end
