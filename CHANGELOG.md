@@ -1,5 +1,5 @@
 ## 5.1.1
-  - [DOC] Changed docs to indicate that logstash-jdbc-static requires local_table [#56](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/56). Fixes [#55](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/55).
+  - [DOC] Changed docs to indicate that logstash-jdbc-static requires local_table [#56](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/56). Fixes [#55](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/55).
 
 ## 5.1.0
   - Added `target` option to JDBC input, allowing the row columns to target a specific field instead of being expanded 
