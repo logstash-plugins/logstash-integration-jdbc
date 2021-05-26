@@ -2,6 +2,7 @@
 require "logstash-integration-jdbc_jars"
 require "logstash/filters/base"
 require "logstash/namespace"
+require "logstash/plugin_mixins/ecs_compatibility_support"
 require_relative "jdbc/loader"
 require_relative "jdbc/loader_schedule"
 require_relative "jdbc/repeating_load_runner"
@@ -14,6 +15,9 @@ require_relative "jdbc/lookup_processor"
 
 #
 module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
+  # adds ecs_compatibility config which could be :disabled or :v1
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
+
   config_name "jdbc_static"
 
   # Define the loaders, an Array of Hashes, to fetch remote data and create local tables.
@@ -214,6 +218,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     options["lookup_jdbc_driver_class"] = @lookup_jdbc_driver_class
     options["lookup_jdbc_driver_library"] = @lookup_jdbc_driver_library
     options["lookup_jdbc_connection_string"] = @lookup_jdbc_connection_string
+    options["ecs_compatibility"] = ecs_compatibility
     options
   end
 
