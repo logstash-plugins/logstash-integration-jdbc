@@ -14,7 +14,7 @@ describe LogStash::PluginMixins::JdbcStreaming::ParameterHandler do
     end
 
     it "should resolve nested field" do
-      event = ::LogStash::Event.from_json "{\"field\": {\"nested\": \"nested_field\"}}"
+      event = ::LogStash::Event.from_json("{\"field\": {\"nested\": \"nested_field\"}}").first
       handler = LogStash::PluginMixins::JdbcStreaming::ParameterHandler.build_bind_value_handler "[field][nested]"
       handler.extract_from(event)
       expect(handler.extract_from(event)).to eq "nested_field"
