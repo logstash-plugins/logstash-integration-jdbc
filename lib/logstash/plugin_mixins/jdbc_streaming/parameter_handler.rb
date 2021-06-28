@@ -26,7 +26,7 @@ module LogStash module PluginMixins module JdbcStreaming
         return InterpolatedParameter.new(given_value)
       end
 
-      if given_value =~ /\A\s*\[[^\]]+\]\s*\z/
+      if given_value =~ /\A(\s*\[[^\]]+\]\s*)*\z/
         return FieldParameter.new(given_value)
       end
 

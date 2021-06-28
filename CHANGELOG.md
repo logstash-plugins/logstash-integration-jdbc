@@ -1,3 +1,6 @@
+## 5.1.2
+  -  Fix `prepared_statement_bind_values` in streaming filter to resolve nested event's fields[#76](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/76)
+
 ## 5.1.1
   - [DOC] Changed docs to indicate that logstash-jdbc-static requires local_table [#56](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/56). Fixes [#55](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/55).
 
