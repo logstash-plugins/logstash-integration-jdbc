@@ -38,8 +38,11 @@ module LogStash module PluginMixins module JdbcStreaming
         begin
           logger.debug? && logger.debug("Executing JDBC query", :statement => statement, :parameters => params)
           execute_extract_records(db, params, result)
-        rescue ::Sequel::Error => e
-          # all sequel errors are a subclass of this, let all other standard or runtime errors bubble up
+        rescue => e
+          # In theory all exceptions in Sequel should be wrapped in Sequel::Error
+          # However, there are cases where other errors can occur - a `SQLException`may be thrown
+          # during `prepareStatement`. Let's handle these cases here, where we can tag and warn
+          # appropriately rather than bubble up and potentially crash the plugin.
           result.failed!
           logger.warn? && logger.warn("Exception when executing JDBC query", :statement => statement, :parameters => params, :exception => e)
         end
