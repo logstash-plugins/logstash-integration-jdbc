@@ -264,8 +264,17 @@ order is in place.
 ===============================
 
 
+[id="plugins-{type}s-{plugin}-ecs"]
+==== Compatibility with the Elastic Common Schema (ECS)
+
+This plugin is compatible with the {ecs-ref}[Elastic Common Schema (ECS)]. 
+It behaves the same regardless of ECS compatibility, except giving a warning when ECS is enabled and `target` isn't set.
+
+TIP: Set the `target` option to avoid potential schema conflicts.
+
+
 [id="plugins-{type}s-{plugin}-options"]
-==== Jdbc_static Filter Configuration Options
+==== Jdbc_static filter configuration options
 
 This plugin supports the following configuration options plus the <<plugins-{type}s-{plugin}-common-options>> described later.
 
