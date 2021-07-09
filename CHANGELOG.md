@@ -1,3 +1,7 @@
+## 5.1.3
+  - Improve robustness when handling errors from `sequel` library in jdbc static and streaming
+    filters[#78](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/78)
+
 ## 5.1.2
   -  Fix `prepared_statement_bind_values` in streaming filter to resolve nested event's fields[#76](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/76)
 

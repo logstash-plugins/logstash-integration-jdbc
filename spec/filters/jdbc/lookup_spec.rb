@@ -249,6 +249,41 @@ module LogStash module Filters module Jdbc
       end
     end
 
+    describe "lookup operations when prepareStatement throws" do
+      let(:local_db) { double("local_db") }
+      let(:lookup_hash) do
+        {
+            "query" => "select * from servers WHERE ip LIKE ? AND os LIKE ?",
+            "prepared_parameters" => ["%%{[ip]}"],
+            "target" => "server",
+            "tag_on_failure" => ["_jdbcstaticfailure_server"]
+        }
+      end
+      let(:event) { LogStash::Event.new()}
+      let(:records) { [{"name" => "ldn-1-23", "rack" => "2:1:6"}] }
+      let(:prepared_statement) { double("prepared_statement")}
+
+      subject(:lookup) { described_class.new(lookup_hash, {}, "lookup-1") }
+
+      before(:each) do
+        allow(local_db).to receive(:prepare).once.and_return(prepared_statement)
+        allow(prepared_statement).to receive(:call).once.and_raise(Java::JavaSql::SQLTransactionRollbackException.new)
+      end
+
+      it "must not be valid" do
+        expect(subject.valid?).to be_falsey
+      end
+
+      it "should tag event as failed" do
+        event.set("ip", "20.20")
+        event.set("os", "MacOS")
+        subject.prepare(local_db)
+        subject.enhance(local_db, event)
+        expect(event.get("tags")).to eq(["_jdbcstaticfailure_server"])
+        expect(event.get("server")).to be_nil
+      end
+    end
+
     describe "validation of target option" do
       let(:lookup_hash) do
         {
