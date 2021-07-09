@@ -1,3 +1,6 @@
+## 5.1.4
+  - [DOC] Update filter-jdbc_static doc to describe ECS compatibility [#79](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/79)
+
 ## 5.1.3
   - Improve robustness when handling errors from `sequel` library in jdbc static and streaming
     filters[#78](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/78)
