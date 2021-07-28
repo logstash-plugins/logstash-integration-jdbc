@@ -38,6 +38,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'rufus-scheduler', '< 3.5'
   s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.2'
   s.add_runtime_dependency "logstash-mixin-validator_support", '~> 1.0'
+  s.add_runtime_dependency "logstash-mixin-event_support", '~> 1.0'
 
   s.add_development_dependency "childprocess"
   s.add_development_dependency 'logstash-devutils'
