@@ -1,3 +1,8 @@
+## 5.1.5
+  - Refined ECS support [#82](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/82)
+    - Uses shared `target` guidance when ECS compatibility is enabled
+    - Uses Logstash's EventFactory instead of instantiating events directly
+
 ## 5.1.4
   - [DOC] Update filter-jdbc_static doc to describe ECS compatibility [#79](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/79)
 
