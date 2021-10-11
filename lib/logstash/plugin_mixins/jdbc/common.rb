@@ -24,8 +24,9 @@ module LogStash module PluginMixins module Jdbc
       require "sequel"
       require "sequel/adapters/jdbc"
 
+      # execute all the driver loading related duties in a serial fashion to avoid
+      # concurrency related problems with multiple pipelines and multiple drivers
       DRIVERS_LOADING_LOCK.lock()
-
       begin
         load_driver_jars
         begin

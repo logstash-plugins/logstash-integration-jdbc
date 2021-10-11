@@ -1,3 +1,6 @@
+## 5.1.6
+  - Fix, serialize the JDBC driver loading steps to avoid concurrency issues [#84](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/84)
+
 ## 5.1.5
   - Refined ECS support [#82](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/82)
     - Uses shared `target` guidance when ECS compatibility is enabled
