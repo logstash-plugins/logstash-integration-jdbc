@@ -4,6 +4,8 @@ module LogStash module PluginMixins module Jdbc
 
     private
 
+    DRIVERS_LOADING_LOCK = java.util.concurrent.locks.ReentrantLock.new()
+
     def complete_sequel_opts(defaults = {})
       sequel_opts = @sequel_opts.
           map { |key,val| [key.is_a?(String) ? key.to_sym : key, val] }.
@@ -22,18 +24,25 @@ module LogStash module PluginMixins module Jdbc
       require "sequel"
       require "sequel/adapters/jdbc"
 
-      load_driver_jars
+      # execute all the driver loading related duties in a serial fashion to avoid
+      # concurrency related problems with multiple pipelines and multiple drivers
+      DRIVERS_LOADING_LOCK.lock()
       begin
-        @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
-      rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
-        # fix this !!!
-        message = if jdbc_driver_library_set?
-                    "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
-                  else
-                    ":jdbc_driver_library is not set, are you sure you included " +
-                        "the proper driver client libraries in your classpath?"
-                  end
-        raise LogStash::PluginLoadingError, "#{e}. #{message}"
+        load_driver_jars
+        begin
+          @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
+        rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
+          # fix this !!!
+          message = if jdbc_driver_library_set?
+                      "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
+                    else
+                      ":jdbc_driver_library is not set, are you sure you included " +
+                          "the proper driver client libraries in your classpath?"
+                    end
+          raise LogStash::PluginLoadingError, "#{e}. #{message} #{e.backtrace}"
+        end
+      ensure
+        DRIVERS_LOADING_LOCK.unlock()
       end
     end
 
