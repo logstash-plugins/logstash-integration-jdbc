@@ -66,13 +66,13 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       )
     end
 
-    it "should not register correctly" do
+    it "log warning msg when plugin run" do
       plugin.register
-      allow( plugin ).to receive(:log_java_exception)
+      expect( plugin ).to receive(:log_java_exception)
+      expect(plugin.logger).to receive(:warn).once.with("Exception when executing JDBC query",
+                                                        hash_including(:exception => instance_of(String)))
       q = Queue.new
-      expect do
-        plugin.run(q)
-      end.to raise_error(::Sequel::DatabaseConnectionError)
+      plugin.run(q)
     end
 
     it "should log (native) Java driver error" do
@@ -85,9 +85,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         logger
       end
       q = Queue.new
-      expect do
-        plugin.run(q)
-      end.to raise_error(::Sequel::DatabaseConnectionError)
+      plugin.run(q)
     end
   end
 end
