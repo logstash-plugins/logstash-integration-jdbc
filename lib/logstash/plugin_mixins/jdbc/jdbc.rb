@@ -168,8 +168,6 @@ module LogStash  module PluginMixins module Jdbc
         @logger.warn("Failed test_connection with java.sql.SQLException.", :exception => e)
       rescue Sequel::DatabaseConnectionError => e
         @logger.warn("Failed test_connection.", :exception => e)
-        close_jdbc_connection
-
         #TODO return false and let the plugin raise a LogStash::ConfigurationError
         raise e
       end
@@ -208,9 +206,9 @@ module LogStash  module PluginMixins module Jdbc
     public
     def execute_statement
       success = false
-      @connection_lock.lock
-      open_jdbc_connection
       begin
+        @connection_lock.lock
+        open_jdbc_connection
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
