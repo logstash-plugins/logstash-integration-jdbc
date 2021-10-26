@@ -1393,9 +1393,18 @@ describe LogStash::Inputs::Jdbc do
       expect(event.get("num")).to eq(1)
       expect(event.get("string")).to eq("A test")
       expect(event.get("started_at")).to be_a(LogStash::Timestamp)
-      expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+      if major_version < 8
+        expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+      else
+        expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00Z")
+      end
       expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
-      expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+      if major_version < 8
+        expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+      else
+        expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59Z")
+      end
+
       expect(event.get("ranking").to_f).to eq(95.67)
     end
   end
@@ -1442,9 +1451,17 @@ describe LogStash::Inputs::Jdbc do
         expect(event.get("num")).to eq(1)
         expect(event.get("string")).to eq("A test")
         expect(event.get("started_at")).to be_a(LogStash::Timestamp)
-        expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+        if major_version < 8
+          expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+        else
+          expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00Z")
+        end
         expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
-        expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+        if major_version < 8
+          expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+        else
+          expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59Z")
+        end
         expect(event.get("ranking").to_f).to eq(95.67)
       end
     end
@@ -1618,5 +1635,9 @@ describe LogStash::Inputs::Jdbc do
         end
       end
     end
+  end
+
+  def major_version
+    LOGSTASH_VERSION.split('.').first.to_i
   end
 end
