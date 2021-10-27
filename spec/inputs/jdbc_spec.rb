@@ -1626,7 +1626,7 @@ describe LogStash::Inputs::Jdbc do
 
   def expect_time_eq(timestamp, expected)
     # timestamp in 8.0 gives best-available granularity, source in second does not produce milliseconds part
-    expected.sub!("00.000Z", "00Z") if major_version >= 8
+    expected.sub!(".000Z", "Z") if major_version >= 8
     expect(timestamp).to eq(expected)
   end
 end
