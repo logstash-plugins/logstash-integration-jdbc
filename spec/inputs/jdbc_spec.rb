@@ -1393,18 +1393,9 @@ describe LogStash::Inputs::Jdbc do
       expect(event.get("num")).to eq(1)
       expect(event.get("string")).to eq("A test")
       expect(event.get("started_at")).to be_a(LogStash::Timestamp)
-      if major_version < 8
-        expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
-      else
-        expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00Z")
-      end
+      expect_time_eq(event.get("started_at").to_s, "1999-12-31T00:00:00.000Z")
       expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
-      if major_version < 8
-        expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
-      else
-        expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59Z")
-      end
-
+      expect_time_eq(event.get("custom_time").to_s, "1999-12-31T23:59:59.000Z")
       expect(event.get("ranking").to_f).to eq(95.67)
     end
   end
@@ -1451,17 +1442,9 @@ describe LogStash::Inputs::Jdbc do
         expect(event.get("num")).to eq(1)
         expect(event.get("string")).to eq("A test")
         expect(event.get("started_at")).to be_a(LogStash::Timestamp)
-        if major_version < 8
-          expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
-        else
-          expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00Z")
-        end
+        expect_time_eq(event.get("started_at").to_s, "1999-12-31T00:00:00.000Z")
         expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
-        if major_version < 8
-          expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
-        else
-          expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59Z")
-        end
+        expect_time_eq(event.get("custom_time").to_s, "1999-12-31T23:59:59.000Z")
         expect(event.get("ranking").to_f).to eq(95.67)
       end
     end
@@ -1639,5 +1622,11 @@ describe LogStash::Inputs::Jdbc do
 
   def major_version
     LOGSTASH_VERSION.split('.').first.to_i
+  end
+
+  def expect_time_eq(timestamp, expected)
+    # timestamp in 8.0 gives best-available granularity, source in second does not produce milliseconds part
+    expected.sub!("00.000Z", "00Z") if major_version >= 8
+    expect(timestamp).to eq(expected)
   end
 end
