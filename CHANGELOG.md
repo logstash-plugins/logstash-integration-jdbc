@@ -1,3 +1,6 @@
+## 5.1.7
+  - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)
+
 ## 5.1.6
   - Fix, serialize the JDBC driver loading steps to avoid concurrency issues [#84](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/84)
 
