@@ -76,7 +76,7 @@ module LogStash module PluginMixins module Jdbc
     # whose top-level package is com, org, java, javax
     # There are many jdbc drivers that use cc, io, net, etc.
     def normalized_driver_class
-      if @jdbc_driver_class.start_with?("Java::")
+      if @jdbc_driver_class.start_with?("Java")
         @jdbc_driver_class
       else
         "Java::#{@jdbc_driver_class}"
