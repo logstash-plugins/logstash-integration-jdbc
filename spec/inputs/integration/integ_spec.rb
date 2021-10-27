@@ -72,7 +72,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       expect(plugin.logger).to receive(:warn).once.with("Exception when executing JDBC query",
                                                         hash_including(:exception => instance_of(String)))
       q = Queue.new
-      plugin.run(q)
+      expect{ plugin.run(q) }.not_to raise_error
     end
 
     it "should log (native) Java driver error" do
@@ -85,7 +85,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         logger
       end
       q = Queue.new
-      plugin.run(q)
+      expect{ plugin.run(q) }.not_to raise_error
     end
   end
 end
