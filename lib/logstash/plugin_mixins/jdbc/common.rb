@@ -30,7 +30,7 @@ module LogStash module PluginMixins module Jdbc
       begin
         load_driver_jars
         begin
-          @driver_impl = Sequel::JDBC.load_driver(@jdbc_driver_class)
+          @driver_impl = Sequel::JDBC.load_driver(normalized_driver_class)
         rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
           # fix this !!!
           message = if jdbc_driver_library_set?
@@ -71,5 +71,16 @@ module LogStash module PluginMixins module Jdbc
       !@jdbc_driver_library.nil? && !@jdbc_driver_library.empty?
     end
 
+    # normalizing the class name to always have a Java:: prefix
+    # is helpful since JRuby is only able to directly load class names
+    # whose top-level package is com, org, java, javax
+    # There are many jdbc drivers that use cc, io, net, etc.
+    def normalized_driver_class
+      if @jdbc_driver_class.start_with?("Java::", "Java.")
+        @jdbc_driver_class
+      else
+        "Java::#{@jdbc_driver_class}"
+      end
+    end
   end
 end end end
