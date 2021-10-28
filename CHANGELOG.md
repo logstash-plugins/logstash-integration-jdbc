@@ -1,5 +1,5 @@
 ## 5.1.7
-  - Normalize jdbc_driver_class loading to support any top-level java packages
+  - Normalize jdbc_driver_class loading to support any top-level java packages [#86](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/86)
 
 ## 5.1.6
   - Fix, serialize the JDBC driver loading steps to avoid concurrency issues [#84](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/84)
