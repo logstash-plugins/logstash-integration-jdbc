@@ -9,7 +9,6 @@ require "timecop"
 require "stud/temporary"
 require "time"
 require "date"
-require_relative '../jdbc_spec_helper'
 
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 

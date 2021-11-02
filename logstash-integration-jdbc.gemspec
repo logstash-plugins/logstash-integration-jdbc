@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-mixin-event_support", '~> 1.0'
 
   s.add_development_dependency "childprocess"
-  s.add_development_dependency 'logstash-devutils'
+  s.add_development_dependency 'logstash-devutils', '>= 2.3'
   s.add_development_dependency 'timecop'
   s.add_development_dependency 'jdbc-derby'
 end
