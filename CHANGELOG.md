@@ -1,3 +1,6 @@
+## 5.1.8
+  - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)
+
 ## 5.1.7
   - Normalize jdbc_driver_class loading to support any top-level java packages [#86](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/86)
 
