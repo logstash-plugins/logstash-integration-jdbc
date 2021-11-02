@@ -14,10 +14,11 @@ require "date"
 
 describe LogStash::Inputs::Jdbc do
   let(:connection_string) { "jdbc:derby:memory:testdb;create=true" }
+  let(:jdbc_driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
   let(:mixin_settings) do
     {
         "jdbc_user" => ENV['USER'],
-        "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_driver_class" => jdbc_driver_class,
         "jdbc_connection_string" => connection_string
     }
   end
@@ -1612,6 +1613,23 @@ describe LogStash::Inputs::Jdbc do
           expect(queue.size).to eq(expected_queue_size)
           expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(last_run_value + expected_queue_size)
         end
+      end
+    end
+  end
+
+  describe "jdbc_driver_class" do
+    context "when not prefixed with Java::" do
+      let(:jdbc_driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
+      it "loads the class prefixed with Java::" do
+        expect(Sequel::JDBC).to receive(:load_driver).with(/^Java::/)
+        plugin.send(:load_driver)
+      end
+    end
+    context "when prefixed with Java::" do
+      let(:jdbc_driver_class) { "Java::org.apache.derby.jdbc.EmbeddedDriver" }
+      it "loads the class as-is" do
+        expect(Sequel::JDBC).to receive(:load_driver).with(jdbc_driver_class)
+        plugin.send(:load_driver)
       end
     end
   end
