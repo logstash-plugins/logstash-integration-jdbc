@@ -126,7 +126,7 @@ filter plugins.
   * Value type is <<number,number>>
   * Default value is `5.0`
 
-The minimum number of seconds any entry should remain in the cache. Defaults to 5 seconds.
+The maximum number of seconds any entry should remain in the cache. Defaults to 5 seconds.
 
 A numeric value. You can use decimals for example: `cache_expiration => 0.25`.
 If there are transient jdbc errors, the cache will store empty results for a
