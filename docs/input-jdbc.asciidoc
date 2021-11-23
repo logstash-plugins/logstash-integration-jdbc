@@ -153,7 +153,7 @@ NOTE: Not all JDBC accessible technologies will support prepared statements.
 With the introduction of Prepared Statement support comes a different code execution path and some new settings. Most of the existing settings are still useful but there are several new settings for Prepared Statements to read up on.
 Use the boolean setting `use_prepared_statements` to enable this execution mode. Use the `prepared_statement_name` setting to specify a name for the Prepared Statement, this identifies the prepared statement locally and remotely and it should be unique in your config and on the database. Use the `prepared_statement_bind_values` array setting to specify the bind values, use the exact string `:sql_last_value` (multiple times if necessary) for the predefined parameter mentioned before. The `statement` (or `statement_path`) setting still holds the SQL statement but to use bind variables you must use the `?` character as a placeholder in the exact order found in the `prepared_statement_bind_values` array.
 
-NOTE: Building count queries around a prepared statement is not supported at this time and because jdbc paging uses count queries (when `jdbc_page_size` is greater than `0`) under the hood, jdbc paging is not supported with prepared statements at this time either. Therefore, `jdbc_paging_enabled`, `jdbc_page_size` settings are ignored when using prepared statements.
+NOTE: Building count queries around a prepared statement is not supported at this time and because jdbc paging uses count queries (when `jdbc_paging_avoid_count` is false) under the hood, jdbc paging is not supported with prepared statements at this time either. Therefore, `jdbc_paging_enabled`, `jdbc_page_size` settings are ignored when using prepared statements.
 
 Example:
 [source,ruby]
@@ -193,6 +193,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-jdbc_fetch_size>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-jdbc_page_size>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-jdbc_paging_enabled>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-jdbc_paging_avoid_count>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-jdbc_password>> |<<password,password>>|No
 | <<plugins-{type}s-{plugin}-jdbc_password_filepath>> |a valid filesystem path|No
 | <<plugins-{type}s-{plugin}-jdbc_pool_timeout>> |<<number,number>>|No
@@ -359,22 +360,6 @@ JDBC fetch size. if not provided, respective driver's default will be used
 
 JDBC page size
 
-If greater than `0`, a count query and multiple paged queries (with `LIMIT` statement, etc.) are used under the hood.
-
-Otherwise, if less than `0`, multiple queries (without count query) will be performed until no rows are returned.
-The `:offset` and `:size` parameters can be used in the statement (`:size` equal to `-jdbc_page_size`, and `:offset` incremented by `:size`).
-Example:
-
-[source, ruby]
------------------------------------------------
-"SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value LIMIT :offset, :size"
------------------------------------------------
-
-[source, ruby]
------------------------------------------------
-"CALL fetch_my_data(:sql_last_value, :offset, :size)"
------------------------------------------------
-
 [id="plugins-{type}s-{plugin}-jdbc_paging_enabled"]
 ===== `jdbc_paging_enabled`
 
@@ -388,6 +373,30 @@ Each query will use limits and offsets to collectively retrieve the full
 result-set. The limit size is set with `jdbc_page_size`.
 
 Be aware that ordering is not guaranteed between queries.
+
+[id="plugins-{type}s-{plugin}-jdbc_paging_avoid_count"]
+===== `jdbc_paging_avoid_count`
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `false`
+
+Whether to use count query during the JDBC paging
+
+If false, a count query and multiple paged queries (with `LIMIT` statement, etc.) are used under the hood.
+
+Otherwise, if true, multiple paged queries (without a count query ahead) will be performed until no more rows are retrieved.
+The `offset` and `size` parameters can be used in the statement (`size` equal to `jdbc_page_size`, and `offset` incremented by `size`).
+Example:
+
+[source, ruby]
+------------------------------------------------------
+"SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value LIMIT :offset, :size"
+------------------------------------------------------
+
+[source, ruby]
+------------------------------------------------------
+"CALL fetch_my_data(:sql_last_value, :offset, :size)"
+------------------------------------------------------
 
 [id="plugins-{type}s-{plugin}-jdbc_password"]
 ===== `jdbc_password`
