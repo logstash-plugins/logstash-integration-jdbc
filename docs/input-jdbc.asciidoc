@@ -382,9 +382,9 @@ Be aware that ordering is not guaranteed between queries.
 
 Whether to use count query during the JDBC paging
 
-If false, a count query and multiple paged queries (with `LIMIT` statement, etc.) are used under the hood.
+If false, a count query followed by multiple paged queries (with `LIMIT` statement, etc.) are used under the hood.
 
-Otherwise, if true, multiple paged queries (without a count query ahead) will be performed until no more rows are retrieved.
+If true, multiple paged queries (without a count query ahead) will be performed until no more rows are retrieved.
 The `offset` and `size` parameters can be used in the statement (`size` equal to `jdbc_page_size`, and `offset` incremented by `size`).
 Example:
 

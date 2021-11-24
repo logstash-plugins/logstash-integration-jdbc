@@ -329,6 +329,39 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
+  context "when iterating result-set via paging (without count query)" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table",
+        "jdbc_paging_enabled" => true,
+        "jdbc_paging_avoid_count" => true,
+        "jdbc_page_size" => 10
+      }
+    end
+
+    let(:num_rows) { 15 }
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should fetch all rows" do
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
+      end
+
+      plugin.run(queue)
+
+      expect(queue.size).to eq(num_rows)
+    end
+
+  end
+
   context "when using target option" do
     let(:settings) do
       {
