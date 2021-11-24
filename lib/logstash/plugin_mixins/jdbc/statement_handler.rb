@@ -32,22 +32,22 @@ module LogStash module PluginMixins module Jdbc
     def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_avoid_count, jdbc_page_size)
       query = build_query(db, sql_last_value)
       if jdbc_paging_enabled
-        unless jdbc_paging_avoid_count
+        if jdbc_paging_avoid_count
+          offset = 0
+          loop do
+            rows_in_page = 0
+            query.with_sql(query.sql, offset: offset, size: jdbc_page_size).each do |row|
+              yield row
+              rows_in_page += 1
+            end
+            break unless rows_in_page == jdbc_page_size
+            offset += jdbc_page_size
+          end
+        else
           query.each_page(jdbc_page_size) do |paged_dataset|
             paged_dataset.each do |row|
               yield row
             end
-          end
-        else
-          offset = 0
-          loop do
-            count = 0
-            query.with_sql(query.sql, offset: offset, size: jdbc_page_size).each do |row|
-              yield row
-              count += 1
-            end
-            break unless count == jdbc_page_size
-            offset += jdbc_page_size
           end
         end
       else
