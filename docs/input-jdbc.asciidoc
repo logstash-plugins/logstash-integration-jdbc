@@ -385,12 +385,12 @@ Whether to use count query during the JDBC paging
 If false, a count query followed by multiple paged queries (with `LIMIT` statement, etc.) are used under the hood.
 
 If true, multiple paged queries (without a count query ahead) will be performed until no more rows are retrieved.
-The `offset` and `size` parameters can be used in the statement (`size` equal to `jdbc_page_size`, and `offset` incremented by `size`).
+The `offset` and `size` parameters must be used in your statement (`size` equal to `jdbc_page_size`, and `offset` incremented by `size`).
 Example:
 
 [source, ruby]
 ------------------------------------------------------
-"SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value LIMIT :offset, :size"
+"SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value LIMIT :size OFFSET :offset"
 ------------------------------------------------------
 
 [source, ruby]
