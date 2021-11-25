@@ -333,7 +333,7 @@ describe LogStash::Inputs::Jdbc do
 
     let(:settings) do
       {
-        "statement" => "SELECT * from test_table",
+        "statement" => "SELECT * from test_table OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
         "jdbc_paging_enabled" => true,
         "jdbc_paging_avoid_count" => true,
         "jdbc_page_size" => 10
