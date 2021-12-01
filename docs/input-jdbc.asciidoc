@@ -282,6 +282,8 @@ JDBC connection string
 ===== `jdbc_default_timezone`
 
   * Value type is <<string,string>>
+  ** Value should be a canonical timezone or offset, such as `Europe/Paris` or `Etc/GMT+3`
+  ** Value _may_ include square-bracketed extensions, such as `America/Denver[dst_enabled_on_overlap:true]`
   * There is no default value for this setting.
 
 Timezone conversion.
@@ -295,7 +297,12 @@ in relative UTC time in ISO8601 format.
 
 Using this setting will manually assign a specified timezone offset, instead
 of using the timezone setting of the local machine.  You must use a canonical
-timezone, *America/Denver*, for example.
+timezone, `America/Denver`, for example.
+
+Ambiguous Timestamps.
+While it is common to store local times in SQL's timestamp column type, many timezones change their offset during the course of a calendar year and therefore cannot be used with SQL's timestamp type to represent an ordered, continuous timeline.
+For example in the `America/Chicago` zone when daylight savings ends in the autumn, the clock rolls from `01:59:59` back to `01:00:00`, making any timestamp in the 2-hour period between `01:00:00CDT` and `02:00:00CST` on that day ambiguous.
+When encountering an ambiguous timestamp caused by a DST transition, the query will fail unless the timezone specified here includes a square-bracketed instruction for how to handle overlapping periods (such as: `America/Chicago[dst_enabled_on_overlap:true]` or `Australia/Melbourne[dst_enabled_on_overlap:false]`).
 
 [id="plugins-{type}s-{plugin}-plugin_timezone"]
 ===== `plugin_timezone`

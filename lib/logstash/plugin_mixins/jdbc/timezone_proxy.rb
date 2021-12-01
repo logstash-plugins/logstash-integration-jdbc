@@ -3,42 +3,48 @@
 require 'tzinfo'
 
 module LogStash module PluginMixins module Jdbc
-  class TimezoneProxy < SimpleDelegator
+  ##
+  # This `TimezoneProxy` allows timezone specs to include extensions indicating preference for ambiguous handling.
+  # @see TimezoneProxy::parse
+  module TimezoneProxy
     ##
-    # Wraps a ruby timezone object in an object that has an explicit preference in time conversions
-    # either for or against having DST enabled.
-    #
-    # @param timezone [String,TZInfo::Timezone]
-    # @param dst_enabled_on_overlap [Boolean] (default: nil) when encountering an ambiguous time,
-    # declare a preference for selecting the option with DST either enabled or disabled.
-    def self.wrap(timezone, dst_enabled_on_overlap)
-      timezone = ::TZInfo::Timezone.get(timezone) if timezone.kind_of?(String)
-      dst_enabled_on_overlap.nil? ? timezone : new(timezone, dst_enabled_on_overlap)
-    end
-
+    # @param timezone_spec [String]: a timezone spec, consisting of any valid timezone identifier
+    #                                followed by square-bracketed extensions. Currently-supported
+    #                                extensions are:
+    #                                `dst_enabled_on_overlap:(true|false)`: when encountering an ambiguous time
+    #                                                                       due to daylight-savings transition,
+    #                                                                       assume DST to be either enabled or
+    #                                                                       disabled instead of raising an
+    #                                                                       AmbiguousTime exception
+    # @return [TZInfo::Timezone]
     def self.parse(timezone_spec)
-      md = /\A(?<base_spec>[^\[]+)(\[prefer-dst:(?<prefer_dst_spec>true|false)\])?\z/.match(timezone_spec)
+      md = /\A(?<base_spec>[^\[]+)(\[(?<extensions>[^\]]*)\])?\z/.match(timezone_spec)
 
-      timezone = TZInfo::Timezone.get(md[:base_spec])
-      return timezone unless md[:prefer_dst_spec]
+      timezone = ::TZInfo::Timezone.get(md[:base_spec])
+      return timezone unless md[:extensions]
 
-      wrap(timezone, md[:prefer_dst_spec] == 'true')
+      md[:extensions].split(';').each do |extension_spec|
+        timezone = case extension_spec
+                   when 'dst_enabled_on_overlap:true'  then timezone.dup.extend(PeriodForLocalWithDSTPreference::ON)
+                   when 'dst_enabled_on_overlap:false' then timezone.dup.extend(PeriodForLocalWithDSTPreference::OFF)
+                   else fail(ArgumentError, "Invalid timezone extension `#{extension_spec}`")
+                   end
+      end
+
+      timezone
     end
 
     ##
     # @api private
-    def initialize(timezone, dst_enabled_on_overlap)
-      super(timezone) # SimpleDelegator
-      @dst_enabled_on_overlap = dst_enabled_on_overlap
-    end
+    class PeriodForLocalWithDSTPreference < Module
+      def initialize(default_dst_enabled_on_overlap)
+        define_method(:period_for_local) do |localtime, dst_enabled_on_overlap=nil, &dismabiguation_block|
+          super(localtime, dst_enabled_on_overlap.nil? ? default_dst_enabled_on_overlap : dst_enabled_on_overlap, &dismabiguation_block)
+        end
+      end
 
-    ##
-    # @override `Timezone#period_for_local`
-    # inject an implicit preference for DST being either enabled or disabled if called
-    # without an explicit preference
-    def period_for_local(value, dst_enabled_on_overlap=nil, &global_disambiguator)
-      dst_enabled_on_overlap = @dst_enabled_on_overlap if dst_enabled_on_overlap.nil?
-      __getobj__.period_for_local(value, dst_enabled_on_overlap, &global_disambiguator)
+      ON = new(true)
+      OFF = new(false)
     end
   end
 end; end; end

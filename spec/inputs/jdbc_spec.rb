@@ -1468,7 +1468,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     context "when initialized with a preference for DST being enabled" do
-      let(:jdbc_default_timezone) { 'America/Chicago[prefer-dst:true]' }
+      let(:jdbc_default_timezone) { 'America/Chicago[dst_enabled_on_overlap:true]' }
 
       it 'treats the timestamp column as if DST was enabled' do
         plugin.run(queue)
@@ -1477,7 +1477,7 @@ describe LogStash::Inputs::Jdbc do
       end
     end
     context "when initialized with a preference for DST being disabled" do
-      let(:jdbc_default_timezone) { 'America/Chicago[prefer-dst:false]' }
+      let(:jdbc_default_timezone) { 'America/Chicago[dst_enabled_on_overlap:false]' }
 
       it 'treats the timestamp column as if DST was disabled' do
         plugin.run(queue)

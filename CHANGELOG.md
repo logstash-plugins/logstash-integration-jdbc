@@ -1,3 +1,6 @@
+## 5.2.0
+  - Added support for disambiguating timestamps in daylight-savings overlap periods
+
 ## 5.1.8
   - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)
 
