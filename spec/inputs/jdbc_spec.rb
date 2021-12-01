@@ -1447,6 +1447,53 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when retrieving records with ambiguous timestamps" do
+
+    # let(:value_tracker) { double("value tracker", :set_value => nil, :write => nil) }
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from types_table",
+        "jdbc_default_timezone" => jdbc_default_timezone
+      }
+    end
+
+    before(:each) do
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '2021-11-07 01:23:45', 95.67)"
+
+      plugin.register
+
+      # plugin.set_value_tracker(value_tracker)
+      # allow(value_tracker).to receive(:value).and_return("bar")
+    end
+
+    context "when initialized with a preference for DST being enabled" do
+      let(:jdbc_default_timezone) { 'America/Chicago[prefer-dst:true]' }
+
+      it 'treats the timestamp column as if DST was enabled' do
+        plugin.run(queue)
+        event = queue.pop
+        expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("2021-11-07T06:23:45Z")
+      end
+    end
+    context "when initialized with a preference for DST being disabled" do
+      let(:jdbc_default_timezone) { 'America/Chicago[prefer-dst:false]' }
+
+      it 'treats the timestamp column as if DST was disabled' do
+        plugin.run(queue)
+        event = queue.pop
+        expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("2021-11-07T07:23:45Z")
+      end
+    end
+    context "when initialized without a preference for DST being enabled or disabled" do
+      let(:jdbc_default_timezone) { 'America/Chicago' }
+
+      it 'blows up, honestly (legacy behaviour)' do
+        expect { plugin.run(queue) }.to raise_error(::Sequel::InvalidValue, /AmbiguousTime/)
+      end
+    end
+  end
+
   context "when an unreadable jdbc_driver_path entry is present" do
     let(:driver_jar_path) do
       jar_file = $CLASSPATH.find { |name| name.index(Jdbc::Derby.driver_jar) }

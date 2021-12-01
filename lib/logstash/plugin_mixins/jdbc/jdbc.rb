@@ -4,6 +4,7 @@ require "logstash/config/mixin"
 require "time"
 require "date"
 require_relative "value_tracking"
+require_relative "timezone_proxy"
 require_relative "checked_count_logger"
 require_relative "statement_handler"
 
@@ -155,7 +156,7 @@ module LogStash  module PluginMixins module Jdbc
       @database.extension(:pagination)
       if @jdbc_default_timezone
         @database.extension(:named_timezones)
-        @database.timezone = @jdbc_default_timezone
+        @database.timezone = TimezoneProxy.parse(@jdbc_default_timezone)
       end
       if @jdbc_validate_connection
         @database.extension(:connection_validator)
