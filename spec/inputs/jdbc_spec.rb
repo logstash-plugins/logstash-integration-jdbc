@@ -1449,8 +1449,6 @@ describe LogStash::Inputs::Jdbc do
 
   context "when retrieving records with ambiguous timestamps" do
 
-    # let(:value_tracker) { double("value tracker", :set_value => nil, :write => nil) }
-
     let(:settings) do
       {
         "statement" => "SELECT * from types_table",
@@ -1460,11 +1458,7 @@ describe LogStash::Inputs::Jdbc do
 
     before(:each) do
       db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '2021-11-07 01:23:45', 95.67)"
-
       plugin.register
-
-      # plugin.set_value_tracker(value_tracker)
-      # allow(value_tracker).to receive(:value).and_return("bar")
     end
 
     context "when initialized with a preference for DST being enabled" do
@@ -1486,10 +1480,16 @@ describe LogStash::Inputs::Jdbc do
       end
     end
     context "when initialized without a preference for DST being enabled or disabled" do
+      before(:each) { allow(plugin.logger).to receive(:warn) }
       let(:jdbc_default_timezone) { 'America/Chicago' }
 
-      it 'blows up, honestly (legacy behaviour)' do
-        expect { plugin.run(queue) }.to raise_error(::Sequel::InvalidValue, /AmbiguousTime/)
+      it 'the error results in helpful log warning' do
+        # logger = plugin.instance_variable_get(:@logger)
+        # puts("LOGGER: METHOD(#{plugin.logger.inspect}) IVAR(#{logger.inspect})")
+        plugin.run(queue)
+        # expect(plugin.logger).to have_received(:warn) { |*actual_args| puts "WARN>>#{actual_args.inspect}" }
+        expect(plugin.logger).to have_received(:warn).with(a_string_including("Exception when executing JDBC query"), a_hash_including(:exception => a_string_including("2021-11-07 01:23:45 is an ambiguous local time")))
+        # expect { plugin.run(queue) }.to_not raise_error(::Sequel::InvalidValue, /AmbiguousTime/)
       end
     end
   end

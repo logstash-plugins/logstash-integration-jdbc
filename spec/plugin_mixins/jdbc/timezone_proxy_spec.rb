@@ -3,13 +3,13 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/plugin_mixins/jdbc/timezone_proxy"
 
 describe LogStash::PluginMixins::Jdbc::TimezoneProxy do
-  subject(:timezone) { described_class.parse(timezone_spec) }
+  subject(:timezone) { described_class.load(timezone_spec) }
 
   context 'when handling a daylight-savings ambiguous time' do
     context 'without extensions' do
       let(:timezone_spec) { 'America/Los_Angeles[]' }
       it 'raises an AmbiguousTime error' do
-        expect { timezone.local_time(2021,11,7,1,17) }.to raise_error(TZInfo::AmbiguousTime)
+        expect { timezone.local_time(2021,11,7,1,17) }.to raise_error(::TZInfo::AmbiguousTime)
       end
     end
     context 'with extension `dst_enabled_on_overlap:true`' do
@@ -34,6 +34,22 @@ describe LogStash::PluginMixins::Jdbc::TimezoneProxy do
           expect(timestamp.getutc).to eq(Time.utc(2021,11,7,9,17))
           expect(timestamp.utc_offset).to eq( -8 * 3600 )
         end
+      end
+    end
+  end
+
+  context '#load' do
+    context 'when spec is a normal timezone instance' do
+      let(:timezone_spec) { ::TZInfo::Timezone.get('America/Los_Angeles') }
+      it 'returns that instance' do
+        expect(timezone).to be(timezone_spec)
+      end
+    end
+    context 'when spec is an invalid timezone spec' do
+      let(:timezone_spec) { ::TZInfo::Timezone.get('NotAValidTimezoneIdentifier') }
+
+      it 'propagates the TZInfo exception' do
+        expect { timezone }.to raise_exception(::TZInfo::InvalidTimezoneIdentifier)
       end
     end
     context 'with invalid extension' do

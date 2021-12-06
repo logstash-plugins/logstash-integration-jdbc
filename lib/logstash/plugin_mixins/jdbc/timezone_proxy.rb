@@ -17,13 +17,16 @@ module LogStash module PluginMixins module Jdbc
     #                                                                       disabled instead of raising an
     #                                                                       AmbiguousTime exception
     # @return [TZInfo::Timezone]
-    def self.parse(timezone_spec)
-      md = /\A(?<base_spec>[^\[]+)(\[(?<extensions>[^\]]*)\])?\z/.match(timezone_spec)
+    def self.load(timezone_spec)
+      # re-load pass-through
+      return timezone_spec if timezone_spec.kind_of?(::TZInfo::Timezone)
 
-      timezone = ::TZInfo::Timezone.get(md[:base_spec])
-      return timezone unless md[:extensions]
+      parsed_spec = /\A(?<name>[^\[]+)(\[(?<extensions>[^\]]*)\])?\z/.match(timezone_spec)
 
-      md[:extensions].split(';').each do |extension_spec|
+      timezone = ::TZInfo::Timezone.get(parsed_spec[:name])
+      return timezone unless parsed_spec[:extensions]
+
+      parsed_spec[:extensions].split(';').each do |extension_spec|
         timezone = case extension_spec
                    when 'dst_enabled_on_overlap:true'  then timezone.dup.extend(PeriodForLocalWithDSTPreference::ON)
                    when 'dst_enabled_on_overlap:false' then timezone.dup.extend(PeriodForLocalWithDSTPreference::OFF)
@@ -32,6 +35,14 @@ module LogStash module PluginMixins module Jdbc
       end
 
       timezone
+    end
+
+    module JDBCTimezoneSpecValidator
+      def validate_value(value, validator_name)
+        return super(value, validator_name) unless validator_name == :jdbc_timezone_spec
+
+        [true, TimezoneProxy.load(value)] rescue [false, $!.message]
+      end
     end
 
     ##
