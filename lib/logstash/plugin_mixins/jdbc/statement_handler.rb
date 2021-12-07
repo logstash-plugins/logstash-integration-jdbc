@@ -29,10 +29,10 @@ module LogStash module PluginMixins module Jdbc
     # @param db [Sequel::Database]
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_avoid_count, jdbc_page_size)
+    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_manual_mode, jdbc_page_size)
       query = build_query(db, sql_last_value)
       if jdbc_paging_enabled
-        if jdbc_paging_avoid_count
+        if jdbc_paging_manual_mode
           offset = 0
           loop do
             rows_in_page = 0
@@ -87,7 +87,7 @@ module LogStash module PluginMixins module Jdbc
     # @param db [Sequel::Database]
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_avoid_count, jdbc_page_size)
+    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_manual_mode, jdbc_page_size)
       query = build_query(db, sql_last_value)
       query.each do |row|
         yield row
