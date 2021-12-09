@@ -1,3 +1,6 @@
+## 5.2.0
+  - Added `jdbc_paging_manual_mode` option to avoid the initial count query in paginated queries [#90](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/90)
+
 ## 5.1.8
   - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)
 
