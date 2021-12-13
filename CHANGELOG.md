@@ -1,3 +1,6 @@
+## 5.2.0
+  - Added `jdbc_paging_manual_mode` option to avoid the initial count query in paginated queries [#90](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/90)
+
 ## 5.1.10
   - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
     the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).

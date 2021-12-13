@@ -27,7 +27,10 @@ module LogStash module PluginMixins module Jdbc
   class NormalStatementHandler < StatementHandler
     # Performs the query, respecting our pagination settings, yielding once per row of data
     # @param db [Sequel::Database]
-    # @param sql_last_value [Integet|DateTime|Time]
+    # @param sql_last_value [Integer|DateTime|Time]
+    # @param jdbc_paging_enabled [Boolean]
+    # @param jdbc_paging_manual_mode [Boolean]
+    # @param jdbc_page_size [Integer]
     # @yieldparam row [Hash{Symbol=>Object}]
     def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_paging_manual_mode, jdbc_page_size)
       query = build_query(db, sql_last_value)
