@@ -129,6 +129,9 @@ Here is the list:
 |sql_last_value | The value used to calculate which rows to query. Before any query is run,
 this is set to Thursday, 1 January 1970, or 0 if `use_column_value` is true and
 `tracking_column` is set. It is updated accordingly after subsequent queries are run.
+|offset, size| Values used in manual paging mode. Used in queries to explicitly implement
+the paging. Usable only if <<plugins-{type}s-{plugin}-jdbc_paging_enabled>> and
+<<plugins-{type}s-{plugin}-jdbc_paging_manual_mode>>  are enabled.
 |==========================================================
 
 Example:
