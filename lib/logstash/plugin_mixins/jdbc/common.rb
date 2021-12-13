@@ -30,16 +30,15 @@ module LogStash module PluginMixins module Jdbc
       begin
         load_driver_jars
         begin
-          @driver_impl = Sequel::JDBC.load_driver(normalized_driver_class)
-        rescue Sequel::AdapterNotFound => e # Sequel::AdapterNotFound, "#{@jdbc_driver_class} not loaded"
-          # fix this !!!
+          @driver_impl = load_jdbc_driver_class
+        rescue => e
           message = if jdbc_driver_library_set?
                       "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
                     else
                       ":jdbc_driver_library is not set, are you sure you included " +
                           "the proper driver client libraries in your classpath?"
                     end
-          raise LogStash::PluginLoadingError, "#{e}. #{message} #{e.backtrace}"
+          raise LogStash::PluginLoadingError, "#{e.inspect}. #{message}"
         end
       ensure
         DRIVERS_LOADING_LOCK.unlock()
@@ -71,16 +70,13 @@ module LogStash module PluginMixins module Jdbc
       !@jdbc_driver_library.nil? && !@jdbc_driver_library.empty?
     end
 
-    # normalizing the class name to always have a Java:: prefix
-    # is helpful since JRuby is only able to directly load class names
-    # whose top-level package is com, org, java, javax
-    # There are many jdbc drivers that use cc, io, net, etc.
-    def normalized_driver_class
-      if @jdbc_driver_class.start_with?("Java::", "Java.")
-        @jdbc_driver_class
-      else
-        "Java::#{@jdbc_driver_class}"
-      end
+    def load_jdbc_driver_class
+      # sub a potential: 'Java::org::my::Driver' to 'org.my.Driver'
+      class_name = @jdbc_driver_class.gsub('::', '.').sub(/^Java\./, '')
+      # NOTE: JRuby's Java::JavaClass.for_name which considers the custom class-loader(s)
+      # in 9.3 the API changed and thus to avoid surprises we go down to the Java API :
+      JRuby.runtime.getJavaSupport.loadJavaClass(class_name) # throws ClassNotFoundException
     end
+
   end
 end end end
