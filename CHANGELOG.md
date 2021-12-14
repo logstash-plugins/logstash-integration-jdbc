@@ -1,3 +1,7 @@
+## 5.1.9
+  - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
+    the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).
+
 ## 5.1.8
   - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)
 
