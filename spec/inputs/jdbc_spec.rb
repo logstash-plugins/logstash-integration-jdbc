@@ -1249,32 +1249,6 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context 'connection errors' do
-
-    it "should log native Java cause" do
-      mixin_settings['connection_retry_attempts'] = 1
-
-      allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
-      expect do
-        plugin.register
-        plugin.run(queue)
-      end.to raise_error(Sequel::PoolTimeout)
-    end
-
-    # it "should log Java driver error" do
-    #   plugin.register
-    #   expect( plugin.logger )
-    #   # expect(org.apache.logging.log4j.LogManager).to receive(:solve_for).and_wrap_original { |m, *args| m.call(*args).first(5) }
-    #   q = Queue.new
-    #   expect do
-    #     plugin.run(q)
-    #   end.to raise_error(::Sequel::DatabaseConnectionError)
-    # end
-
-  end
-
   context "when encoding of some columns need to be changed" do
 
     let(:settings) {{ "statement" => "SELECT * from test_table" }}
