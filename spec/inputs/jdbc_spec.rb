@@ -1249,6 +1249,32 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context 'connection errors' do
+
+    it "should log native Java cause" do
+      mixin_settings['connection_retry_attempts'] = 1
+
+      allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
+      expect do
+        plugin.register
+        plugin.run(queue)
+      end.to raise_error(Sequel::PoolTimeout)
+    end
+
+    # it "should log Java driver error" do
+    #   plugin.register
+    #   expect( plugin.logger )
+    #   # expect(org.apache.logging.log4j.LogManager).to receive(:solve_for).and_wrap_original { |m, *args| m.call(*args).first(5) }
+    #   q = Queue.new
+    #   expect do
+    #     plugin.run(q)
+    #   end.to raise_error(::Sequel::DatabaseConnectionError)
+    # end
+
+  end
+
   context "when encoding of some columns need to be changed" do
 
     let(:settings) {{ "statement" => "SELECT * from test_table" }}
@@ -1620,16 +1646,27 @@ describe LogStash::Inputs::Jdbc do
   describe "jdbc_driver_class" do
     context "when not prefixed with Java::" do
       let(:jdbc_driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class prefixed with Java::" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(/^Java::/)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
       end
     end
     context "when prefixed with Java::" do
       let(:jdbc_driver_class) { "Java::org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class as-is" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(jdbc_driver_class)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+    end
+    context "when prefixed with Java." do
+      let(:jdbc_driver_class) { "Java.org::apache::derby::jdbc.EmbeddedDriver" }
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+    end
+    context "when class name invalid" do
+      let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
+      it "raises a loading error" do
+        expect { plugin.send(:load_driver) }.to raise_error LogStash::PluginLoadingError,
+                                                            /java.lang.ClassNotFoundException: org.apache.NonExistentDriver/
       end
     end
   end
