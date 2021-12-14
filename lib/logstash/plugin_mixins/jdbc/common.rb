@@ -4,6 +4,8 @@ module LogStash module PluginMixins module Jdbc
 
     private
 
+    # NOTE: using the JRuby mechanism to load classes (through JavaSupport)
+    # makes the lock redundant although it does not hurt to have it around.
     DRIVERS_LOADING_LOCK = java.util.concurrent.locks.ReentrantLock.new()
 
     def complete_sequel_opts(defaults = {})
@@ -31,7 +33,8 @@ module LogStash module PluginMixins module Jdbc
         load_driver_jars
         begin
           @driver_impl = load_jdbc_driver_class
-        rescue => e
+        rescue => e # catch java.lang.ClassNotFoundException, potential errors
+          # (e.g. ExceptionInInitializerError or LinkageError) won't get caught
           message = if jdbc_driver_library_set?
                       "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
                     else
@@ -71,7 +74,7 @@ module LogStash module PluginMixins module Jdbc
     end
 
     def load_jdbc_driver_class
-      # sub a potential: 'Java::org::my::Driver' to 'org.my.Driver'
+      # sub a potential: 'Java::org::my.Driver' to 'org.my.Driver'
       class_name = @jdbc_driver_class.gsub('::', '.').sub(/^Java\./, '')
       # NOTE: JRuby's Java::JavaClass.for_name which considers the custom class-loader(s)
       # in 9.3 the API changed and thus to avoid surprises we go down to the Java API :
