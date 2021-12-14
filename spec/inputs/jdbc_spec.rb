@@ -1620,16 +1620,27 @@ describe LogStash::Inputs::Jdbc do
   describe "jdbc_driver_class" do
     context "when not prefixed with Java::" do
       let(:jdbc_driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class prefixed with Java::" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(/^Java::/)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
       end
     end
     context "when prefixed with Java::" do
       let(:jdbc_driver_class) { "Java::org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class as-is" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(jdbc_driver_class)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+    end
+    context "when prefixed with Java." do
+      let(:jdbc_driver_class) { "Java.org::apache::derby::jdbc.EmbeddedDriver" }
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+    end
+    context "when class name invalid" do
+      let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
+      it "raises a loading error" do
+        expect { plugin.send(:load_driver) }.to raise_error LogStash::PluginLoadingError,
+                                                            /java.lang.ClassNotFoundException: org.apache.NonExistentDriver/
       end
     end
   end
