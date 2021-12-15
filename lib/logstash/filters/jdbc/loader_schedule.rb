@@ -9,7 +9,11 @@ module LogStash module Filters module Jdbc
     def to_log_string
       message = ""
       message.concat "these months in the year [#{@cronline.months.to_a.join(", ")}];" unless @cronline.months.nil?
-      message.concat "these days in the month [#{@cronline.days.to_a.join(", ")}];" unless @cronline.days.nil?
+      if fugit_cron?
+        message.concat "these days in the month [#{@cronline.monthdays.to_a.join(", ")}];" unless @cronline.monthdays.nil?
+      else
+        message.concat "these days in the month [#{@cronline.days.to_a.join(", ")}];" unless @cronline.days.nil?
+      end
       message.concat "these hours in the day [#{@cronline.hours.to_a.join(", ")}];" unless @cronline.hours.nil?
       message.concat "these minutes in the hour [#{@cronline.minutes.to_a.join(", ")}];" unless @cronline.minutes.nil?
       message.concat "these seconds in the minute [#{@cronline.seconds.to_a.join(", ")}]" unless @cronline.seconds.nil?
@@ -36,13 +40,21 @@ module LogStash module Filters module Jdbc
       end
     end
 
-
     def only_seconds_set?
       @cronline.seconds &&
         @cronline.minutes.nil? &&
         @cronline.hours.nil? &&
-        @cronline.days.nil? &&
-        @cronline.months.nil?
+        # Rufus <= 3.4 Rufus::Scheduler::CronLine#days
+        # since 3.5.0 using Fugit::Cron which does not use #days
+        (!@cronline.respond_to?(:days) || @cronline.days.nil?) &&
+        # Rufus 3.4.x seems to have missed the monthdays reader
+        (!@cronline.respond_to?(:monthdays) || @cronline.monthdays.nil?) &&
+        @cronline.months.nil? &&
+        @cronline.weekdays.nil?
+    end
+
+    def fugit_cron?
+      defined?(::Fugit) && @cronline.is_a?(::Fugit::Cron)
     end
 
     def parse_options
@@ -53,7 +65,9 @@ module LogStash module Filters module Jdbc
       end
 
       begin
-        @cronline = Rufus::Scheduler::CronLine.new(@loader_schedule)
+        # Rufus::Scheduler 3.0 - 3.6 methods signature: parse_cron(o, opts)
+        # since Rufus::Scheduler 3.7 methods signature: parse_cron(o, opts={})
+        @cronline = Rufus::Scheduler.parse_cron(@loader_schedule, {})
       rescue => e
         @option_errors << "The loader_schedule option is invalid: #{e.message}"
       end
