@@ -2,6 +2,8 @@
 require_relative 'db_object'
 
 module LogStash module Filters module Jdbc
+  # Handler impl for scheduled jobs from Rufus::Scheduler.
+  # @see #call
   class SingleLoadRunner
 
     attr_reader :local, :loaders, :preloaders
@@ -26,6 +28,7 @@ module LogStash module Filters module Jdbc
     def repeated_load
     end
 
+    # @note hook called Handler by Rufus::Scheduler
     def call
       repeated_load
     end
