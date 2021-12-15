@@ -191,7 +191,6 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     @processor = Jdbc::LookupProcessor.new(@local_lookups, global_lookup_options)
     runner_args.unshift(@processor.local)
     if @loader_schedule
-      args = []
       @loader_runner = Jdbc::RepeatingLoadRunner.new(*runner_args)
       @loader_runner.initial_load
       cronline = Jdbc::LoaderSchedule.new(@loader_schedule)
