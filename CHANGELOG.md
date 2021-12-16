@@ -1,4 +1,10 @@
-## 5.1.9
+## 5.1.10
+  - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
+    the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).
+
+  - Fix: regression due returning the Java driver class [#98](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/98)
+
+## 5.1.9 (yanked)
   - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
     the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).
 
