@@ -1,3 +1,4 @@
+require 'jruby'
 
 module LogStash module PluginMixins module Jdbc
   module Common
@@ -75,10 +76,13 @@ module LogStash module PluginMixins module Jdbc
 
     def load_jdbc_driver_class
       # sub a potential: 'Java::org::my.Driver' to 'org.my.Driver'
-      class_name = @jdbc_driver_class.gsub('::', '.').sub(/^Java\./, '')
+      klass = @jdbc_driver_class.gsub('::', '.').sub(/^Java\./, '')
       # NOTE: JRuby's Java::JavaClass.for_name which considers the custom class-loader(s)
       # in 9.3 the API changed and thus to avoid surprises we go down to the Java API :
-      JRuby.runtime.getJavaSupport.loadJavaClass(class_name) # throws ClassNotFoundException
+      klass = JRuby.runtime.getJavaSupport.loadJavaClass(klass) # throws ClassNotFoundException
+      # unfortunately we can not simply return the wrapped java.lang.Class instance as
+      # Sequel assumes to be able to do a `driver_class.new` which only works on the proxy,
+      org.jruby.javasupport.Java.getProxyClass(JRuby.runtime, klass)
     end
 
   end
