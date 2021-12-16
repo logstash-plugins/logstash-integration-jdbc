@@ -1635,6 +1635,14 @@ describe LogStash::Inputs::Jdbc do
       it "loads the class" do
         expect { plugin.send(:load_driver) }.not_to raise_error
       end
+
+      it "can instantiate the returned driver class" do
+        # for drivers where the path through DriverManager fails, Sequel assumes
+        # having a proxied Java class instance (instead of a java.lang.Class) and
+        # does a driver.new.connect https://git.io/JDV6M
+        driver = plugin.send(:load_driver)
+        expect { driver.new }.not_to raise_error
+      end
     end
     context "when class name invalid" do
       let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
