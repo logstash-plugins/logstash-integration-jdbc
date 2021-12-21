@@ -329,13 +329,13 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
-  context "when iterating result-set via paging (manual mode)" do
+  context "when iterating result-set via explicit paging mode" do
 
     let(:settings) do
       {
         "statement" => "SELECT * from test_table OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
         "jdbc_paging_enabled" => true,
-        "jdbc_paging_manual_mode" => true,
+        "jdbc_paging_mode" => "explicit",
         "jdbc_page_size" => 10
       }
     end

@@ -55,8 +55,8 @@ module LogStash  module PluginMixins module Jdbc
       # Be aware that ordering is not guaranteed between queries.
       config :jdbc_paging_enabled, :validate => :boolean, :default => false
 
-      # Whether to use manual mode during the JDBC paging
-      config :jdbc_paging_manual_mode, :validate => :boolean, :default => false
+      # Which pagination mode to use, automatic pagination or explicitly defined in the query.
+      config :jdbc_paging_mode, :validate => [ "auto", "explicit" ], :default => "auto"
 
       # JDBC page size
       config :jdbc_page_size, :validate => :number, :default => 100000

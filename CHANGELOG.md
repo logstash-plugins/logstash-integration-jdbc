@@ -1,5 +1,6 @@
 ## 5.2.0
-  - Added `jdbc_paging_manual_mode` option to avoid the initial count query in paginated queries [#95](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/95)
+  - Added `jdbc_paging_mode` option to choose if use `explicit` pagination in statements and avoid the initial count 
+    query or use `auto` to delegate to the underlying library [#95](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/95)
 
 ## 5.1.10
   - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),

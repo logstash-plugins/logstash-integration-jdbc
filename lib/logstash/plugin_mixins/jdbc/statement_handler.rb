@@ -6,7 +6,7 @@ module LogStash module PluginMixins module Jdbc
       if plugin.use_prepared_statements
         klass = PreparedStatementHandler
       else
-        if plugin.jdbc_paging_enabled && plugin.jdbc_paging_manual_mode
+        if plugin.jdbc_paging_enabled && plugin.jdbc_paging_mode == "explicit"
           klass = ExplicitPagingModeStatementHandler
         else
           klass = NormalStatementHandler
