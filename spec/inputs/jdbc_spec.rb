@@ -329,6 +329,39 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
+  context "when iterating result-set via explicit paging mode" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+        "jdbc_paging_enabled" => true,
+        "jdbc_paging_mode" => "explicit",
+        "jdbc_page_size" => 10
+      }
+    end
+
+    let(:num_rows) { 15 }
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should fetch all rows" do
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
+      end
+
+      plugin.run(queue)
+
+      expect(queue.size).to eq(num_rows)
+    end
+
+  end
+
   context "when using target option" do
     let(:settings) do
       {
