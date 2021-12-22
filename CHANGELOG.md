@@ -1,3 +1,6 @@
+## 5.2.1
+  - Refactor: isolate paginated normal statement algorithm in a separate handler [#101](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/101)
+
 ## 5.2.0
   - Added `jdbc_paging_mode` option to choose if use `explicit` pagination in statements and avoid the initial count 
     query or use `auto` to delegate to the underlying library [#95](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/95)

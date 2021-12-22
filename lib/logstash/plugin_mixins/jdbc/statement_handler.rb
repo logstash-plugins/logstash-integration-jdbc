@@ -6,8 +6,12 @@ module LogStash module PluginMixins module Jdbc
       if plugin.use_prepared_statements
         klass = PreparedStatementHandler
       else
-        if plugin.jdbc_paging_enabled && plugin.jdbc_paging_mode == "explicit"
-          klass = ExplicitPagingModeStatementHandler
+        if plugin.jdbc_paging_enabled
+          if plugin.jdbc_paging_mode == "explicit"
+            klass = ExplicitPagingModeStatementHandler
+          else
+            klass = PagedNormalStatementHandler
+          end
         else
           klass = NormalStatementHandler
         end
@@ -33,24 +37,14 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class NormalStatementHandler < StatementHandler
-    # Performs the query, respecting our pagination settings, yielding once per row of data
+    # Performs the query, yielding once per row of data
     # @param db [Sequel::Database]
     # @param sql_last_value [Integer|DateTime|Time]
-    # @param jdbc_paging_enabled [Boolean]
-    # @param jdbc_page_size [Integer]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
+    def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
-      if jdbc_paging_enabled
-        query.each_page(jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
-            yield row
-          end
-        end
-      else
-        query.each do |row|
-          yield row
-        end
+      query.each do |row|
+        yield row
       end
     end
 
@@ -77,14 +71,34 @@ module LogStash module PluginMixins module Jdbc
     end
   end
 
-  class ExplicitPagingModeStatementHandler < NormalStatementHandler
+  class PagedNormalStatementHandler < NormalStatementHandler
+    attr_reader :jdbc_page_size
+
     # Performs the query, respecting our pagination settings, yielding once per row of data
     # @param db [Sequel::Database]
     # @param sql_last_value [Integer|DateTime|Time]
-    # @param jdbc_paging_enabled [Boolean]
-    # @param jdbc_page_size [Integer]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
+    def perform_query(db, sql_last_value)
+      query = build_query(db, sql_last_value)
+      query.each_page(@jdbc_page_size) do |paged_dataset|
+        paged_dataset.each do |row|
+          yield row
+        end
+      end
+    end
+
+    def post_init(plugin)
+      super(plugin)
+      @jdbc_page_size = plugin.jdbc_page_size
+    end
+  end
+
+  class ExplicitPagingModeStatementHandler < PagedNormalStatementHandler
+    # Performs the query, respecting our pagination settings, yielding once per row of data
+    # @param db [Sequel::Database]
+    # @param sql_last_value [Integer|DateTime|Time]
+    # @yieldparam row [Hash{Symbol=>Object}]
+    def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
       offset = 0
       loop do
@@ -106,7 +120,7 @@ module LogStash module PluginMixins module Jdbc
     # @param db [Sequel::Database]
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
-    def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
+    def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
       query.each do |row|
         yield row
