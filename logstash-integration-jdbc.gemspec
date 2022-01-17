@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-integration-jdbc'
-  s.version         = '5.2.1'
+  s.version         = '5.2.2'
   s.licenses = ['Apache License (2.0)']
   s.summary         = "Integration with JDBC - input and filter plugins"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
