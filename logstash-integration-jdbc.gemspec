@@ -34,8 +34,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
-  # 3.5 limitation is required for jdbc-static loading schedule
-  s.add_runtime_dependency 'rufus-scheduler', '< 3.5'
+  s.add_runtime_dependency 'rufus-scheduler', '~> 3.0.9'
   s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.3'
   s.add_runtime_dependency "logstash-mixin-validator_support", '~> 1.0'
   s.add_runtime_dependency "logstash-mixin-event_support", '~> 1.0'
