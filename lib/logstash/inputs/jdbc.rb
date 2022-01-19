@@ -3,6 +3,7 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
+require "logstash/plugin_mixins/jdbc/scheduler"
 require "logstash/plugin_mixins/ecs_compatibility_support"
 require "logstash/plugin_mixins/ecs_compatibility_support/target_check"
 require "logstash/plugin_mixins/validator_support/field_reference_validation_adapter"
@@ -293,8 +294,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   def run(queue)
     load_driver
     if @schedule
-      @scheduler = Rufus::Scheduler.new(:max_work_threads => 1)
-      @scheduler.cron @schedule do
+      # input thread (Java) name example "[my-oracle]<jdbc"
+      @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.new(
+          :max_work_threads => 1, :thread_name => "[#{id}]<jdbc__scheduler"
+      )
+      @scheduler.schedule_cron @schedule do
         execute_query(queue)
       end
 

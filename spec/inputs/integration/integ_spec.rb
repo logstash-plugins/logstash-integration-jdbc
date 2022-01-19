@@ -70,7 +70,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       plugin.register
       expect( plugin ).to receive(:log_java_exception)
       expect(plugin.logger).to receive(:warn).once.with("Exception when executing JDBC query",
-                                                        hash_including(:exception => instance_of(String)))
+                                                        hash_including(:message => instance_of(String)))
       q = Queue.new
       expect{ plugin.run(q) }.not_to raise_error
     end

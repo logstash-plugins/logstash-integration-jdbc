@@ -1,3 +1,6 @@
+## 5.2.2
+  - Feat: name scheduler threads + redirect error logging [#102](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/102)
+
 ## 5.2.1
   - Refactor: isolate paginated normal statement algorithm in a separate handler [#101](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/101)
 
