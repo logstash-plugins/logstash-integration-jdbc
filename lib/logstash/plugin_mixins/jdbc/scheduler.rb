@@ -13,6 +13,19 @@ module LogStash module PluginMixins module Jdbc
                    (defined?(Rufus::Scheduler::ZoTime) ? Rufus::Scheduler::ZoTime : ::Time)
 
     # @overload
+    def timeout_jobs
+      # Rufus relies on `Thread.list` which is a blocking operation and with many schedulers
+      # (and threads) within LS will have a negative impact on performance as scheduler
+      # threads will end up waiting to obtain the `Thread.list` lock.
+      #
+      # However, this isn't necessary we can easily detect whether there are any jobs
+      # that might need to timeout: only when `@opts[:timeout]` is set causes worker thread(s)
+      # to have a `Thread.current[:rufus_scheduler_timeout]` that is not nil
+      return unless @opts[:timeout]
+      super
+    end
+
+    # @overload
     def on_error(job, err)
       details = { exception: err.class, message: err.message, backtrace: err.backtrace }
       details[:cause] = err.cause if err.cause
