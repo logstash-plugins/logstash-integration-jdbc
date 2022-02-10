@@ -302,7 +302,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
           # should trigger, default is 0.3 which is a bit too often ...
           # in theory the cron expression '* * * * * *' supports running jobs
           # every second but this is very rare, we could potentially go higher
-          :frequency => 0.9,
+          :frequency => 1.0,
       )
       @scheduler.schedule_cron @schedule do
         execute_query(queue)
