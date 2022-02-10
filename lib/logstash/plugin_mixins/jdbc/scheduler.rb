@@ -27,7 +27,7 @@ module LogStash module PluginMixins module Jdbc
 
     # @overload
     def work_threads(query = :all)
-      if query.nil? # our special case from JobDecorator#start_work_thread
+      if query == :__all_no_cache__ # special case from JobDecorator#start_work_thread
         @_work_threads = nil # when a new worker thread is being added reset
         return super(:all)
       end
@@ -108,14 +108,14 @@ module LogStash module PluginMixins module Jdbc
     module JobDecorator
 
       def start_work_thread
-        prev_thread_count = @scheduler.work_threads(nil).size
+        prev_thread_count = @scheduler.work_threads.size
 
         ret = super() # does not return Thread instance in 3.0
 
-        work_threads = @scheduler.work_threads(nil)
+        work_threads = @scheduler.work_threads(:__all_no_cache__)
         while prev_thread_count == work_threads.size # very unlikely
           Thread.pass
-          work_threads = @scheduler.work_threads(nil)
+          work_threads = @scheduler.work_threads(:__all_no_cache__)
         end
 
         work_thread_name_prefix = @scheduler.work_thread_name_prefix
