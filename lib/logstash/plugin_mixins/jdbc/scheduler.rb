@@ -13,6 +13,42 @@ module LogStash module PluginMixins module Jdbc
                    (defined?(Rufus::Scheduler::ZoTime) ? Rufus::Scheduler::ZoTime : ::Time)
 
     # @overload
+    def timeout_jobs
+      # Rufus relies on `Thread.list` which is a blocking operation and with many schedulers
+      # (and threads) within LS will have a negative impact on performance as scheduler
+      # threads will end up waiting to obtain the `Thread.list` lock.
+      #
+      # However, this isn't necessary we can easily detect whether there are any jobs
+      # that might need to timeout: only when `@opts[:timeout]` is set causes worker thread(s)
+      # to have a `Thread.current[:rufus_scheduler_timeout]` that is not nil
+      return unless @opts[:timeout]
+      super
+    end
+
+    # @overload
+    def work_threads(query = :all)
+      if query == :__all_no_cache__ # special case from JobDecorator#start_work_thread
+        @_work_threads = nil # when a new worker thread is being added reset
+        return super(:all)
+      end
+
+      # Gets executed every time a job is triggered, we're going to cache the
+      # worker threads for this scheduler (to avoid `Thread.list`) - they only
+      # change when a new thread is being started from #start_work_thread ...
+      work_threads = @_work_threads
+      if work_threads.nil?
+        work_threads = threads.select { |t| t[:rufus_scheduler_work_thread] }
+        @_work_threads = work_threads
+      end
+
+      case query
+      when :active then work_threads.select { |t| t[:rufus_scheduler_job] }
+      when :vacant then work_threads.reject { |t| t[:rufus_scheduler_job] }
+      else work_threads
+      end
+    end
+
+    # @overload
     def on_error(job, err)
       details = { exception: err.class, message: err.message, backtrace: err.backtrace }
       details[:cause] = err.cause if err.cause
@@ -76,10 +112,10 @@ module LogStash module PluginMixins module Jdbc
 
         ret = super() # does not return Thread instance in 3.0
 
-        work_threads = @scheduler.work_threads
+        work_threads = @scheduler.work_threads(:__all_no_cache__)
         while prev_thread_count == work_threads.size # very unlikely
           Thread.pass
-          work_threads = @scheduler.work_threads
+          work_threads = @scheduler.work_threads(:__all_no_cache__)
         end
 
         work_thread_name_prefix = @scheduler.work_thread_name_prefix

@@ -296,7 +296,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     if @schedule
       # input thread (Java) name example "[my-oracle]<jdbc"
       @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.new(
-          :max_work_threads => 1, :thread_name => "[#{id}]<jdbc__scheduler"
+          :max_work_threads => 1,
+          :thread_name => "[#{id}]<jdbc__scheduler",
+          # amount the scheduler thread sleeps between checking whether jobs
+          # should trigger, default is 0.3 which is a bit too often ...
+          # in theory the cron expression '* * * * * *' supports running jobs
+          # every second but this is very rare, we could potentially go higher
+          :frequency => 1.0,
       )
       @scheduler.schedule_cron @schedule do
         execute_query(queue)

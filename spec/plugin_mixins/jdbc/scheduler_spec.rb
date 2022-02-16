@@ -49,4 +49,30 @@ describe LogStash::PluginMixins::Jdbc::Scheduler do
 
   end
 
+  context 'work threads' do
+
+    let(:opts) { super().merge :max_work_threads => 3 }
+
+    let(:counter) { java.util.concurrent.atomic.AtomicLong.new(0) }
+
+    before do
+      scheduler.schedule_cron('* * * * * *') { counter.increment_and_get; sleep 3.25 } # every second
+    end
+
+    it "are working" do
+      sleep(0.05) while counter.get == 0
+      expect( scheduler.work_threads.size ).to eql 1
+      sleep(0.05) while counter.get == 1
+      expect( scheduler.work_threads.size ).to eql 2
+      sleep(0.05) while counter.get == 2
+      expect( scheduler.work_threads.size ).to eql 3
+
+      sleep 1.25
+      expect( scheduler.work_threads.size ).to eql 3
+      sleep 1.25
+      expect( scheduler.work_threads.size ).to eql 3
+    end
+
+  end
+
 end
