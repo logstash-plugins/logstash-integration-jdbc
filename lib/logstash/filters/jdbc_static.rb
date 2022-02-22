@@ -3,6 +3,7 @@ require "logstash-integration-jdbc_jars"
 require "logstash/filters/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/ecs_compatibility_support"
+require "logstash/plugin_mixins/jdbc/scheduler"
 require_relative "jdbc/loader"
 require_relative "jdbc/loader_schedule"
 require_relative "jdbc/repeating_load_runner"
@@ -194,13 +195,11 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
       @loader_runner = Jdbc::RepeatingLoadRunner.new(*runner_args)
       @loader_runner.initial_load
       cronline = Jdbc::LoaderSchedule.new(@loader_schedule)
-      cronline.to_log_string.tap do |msg|
-        logger.info("Scheduler operations: #{msg}") unless msg.empty?
+      if cronline.valid?
+        logger.info("Loaders will execute every #{cronline.to_log_string}", loader_schedule: @loader_schedule)
       end
-      logger.info("Scheduler scan for work frequency is: #{cronline.schedule_frequency}")
-      rufus_args = {:max_work_threads => 1, :frequency => cronline.schedule_frequency}
-      @scheduler = Rufus::Scheduler.new(rufus_args)
-      @scheduler.cron(cronline.loader_schedule, @loader_runner)
+      @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.
+          start_cron_scheduler(@loader_schedule, thread_name: "[#{id}]<jdbc_static__scheduler") { @loader_runner.repeated_load }
     else
       @loader_runner = Jdbc::SingleLoadRunner.new(*runner_args)
       @loader_runner.initial_load
