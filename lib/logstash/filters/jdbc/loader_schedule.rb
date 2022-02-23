@@ -6,18 +6,6 @@ module LogStash module Filters module Jdbc
   class LoaderSchedule < Validatable
     attr_reader :loader_schedule
 
-    def to_log_string
-      if @cronline.respond_to?(:rough_frequency) # Fugit::Cron
-        frequency = @cronline.rough_frequency
-      else # old Rufus::Scheduler
-        frequency = @cronline.frequency
-        if @cronline.seconds
-          frequency = @cronline.brute_frequency
-        end
-      end
-      "#{frequency} seconds"
-    end
-
     private
 
     # @overload
