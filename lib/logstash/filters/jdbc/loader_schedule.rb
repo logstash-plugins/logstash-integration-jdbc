@@ -20,10 +20,6 @@ module LogStash module Filters module Jdbc
 
     private
 
-    def fugit_cron?
-      defined?(::Fugit) && @cronline.is_a?(::Fugit::Cron)
-    end
-
     # @overload
     def parse_options
       @loader_schedule = @options
