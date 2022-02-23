@@ -199,7 +199,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
         logger.info("Loaders will execute every #{cronline.to_log_string}", loader_schedule: @loader_schedule)
       end
       @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.
-          start_cron_scheduler(@loader_schedule, thread_name: "[#{id}]<jdbc_static__scheduler") { @loader_runner.repeated_load }
+          start_cron_scheduler(@loader_schedule, thread_name: "[#{id}]-jdbc_static__scheduler") { @loader_runner.repeated_load }
     else
       @loader_runner = Jdbc::SingleLoadRunner.new(*runner_args)
       @loader_runner.initial_load
