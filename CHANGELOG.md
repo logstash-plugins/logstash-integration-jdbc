@@ -1,3 +1,6 @@
+## 5.2.4
+  - Fix: compatibility with all (>= 3.0) rufus-scheduler versions [#97](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/97) 
+
 ## 5.2.3
   - Performance: avoid contention on scheduler execution [#103](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/103)
 
