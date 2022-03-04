@@ -5,6 +5,7 @@ require "sequel"
 require "sequel/adapters/jdbc"
 require "stud/temporary"
 require "timecop"
+require "pathname"
 
 # LogStash::Logging::Logger::configure_logging("WARN")
 
@@ -84,6 +85,15 @@ module LogStash module Filters
     let(:event)      { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
 
     let(:ipaddr) { ".3.1.1" }
+
+    describe "verify derby path property" do
+      it "should be set into Logstash data path" do
+        plugin.register
+
+        expected = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "filter", "jdbc_static").to_path
+        expect(java.lang.System.getProperty("derby.system.home")).to eq(expected)
+      end
+    end
 
     describe "non scheduled operation" do
       after { plugin.close }
