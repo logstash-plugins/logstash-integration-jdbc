@@ -178,8 +178,10 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # exactly once.
   config :schedule, :validate => :string
 
-  # Path to file with last run time
-  config :last_run_metadata_path, :validate => :string, :default => "#{ENV['HOME']}/.logstash_jdbc_last_run"
+  # Path to file with last run time.
+  # The default will write file to `<path.data>/plugins/inputs/jdbc/logstash_jdbc_last_run`
+  # NOTE: it must be a file path and not a directory path
+  config :last_run_metadata_path, :validate => :string
 
   # Use an incremental column value rather than a timestamp
   config :use_column_value, :validate => :boolean, :default => false
@@ -230,11 +232,29 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   config :target, :validate => :field_reference, :required => false
 
   attr_reader :database # for test mocking/stubbing
+  attr_reader :last_run_metadata_file_path # path to the file used as last run storage
 
   public
 
   def register
     @logger = self.logger
+
+    if record_last_run
+      if last_run_metadata_path.nil?
+        logstash_data_path = settings.get_value("path.data")
+        tmp_path = Pathname.new(logstash_data_path).join("plugins", "inputs", "jdbc")
+        # Ensure that the filepath exists before writing, since it's deeply nested.
+        tmp_path.mkpath
+        @last_run_metadata_file_path = tmp_path.join("logstash_jdbc_last_run").to_path
+      else
+        #  validate the path is a file and not a directory
+        if Pathname.new(last_run_metadata_path).directory?
+          raise ArgumentError.new("The \"last_run_metadata_path\" argument must point to a file, received a directory: \"#{last_run_metadata_path}\"")
+        end
+        @last_run_metadata_file_path = last_run_metadata_path
+      end
+    end
+
     require "rufus/scheduler"
     prepare_jdbc_connection
 
