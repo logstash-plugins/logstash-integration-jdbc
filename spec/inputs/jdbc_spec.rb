@@ -9,6 +9,7 @@ require "timecop"
 require "stud/temporary"
 require "time"
 require "date"
+require "pathname"
 
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
@@ -1113,6 +1114,53 @@ describe LogStash::Inputs::Jdbc do
       expect(File).not_to exist(settings["last_run_metadata_path"])
     end
   end
+
+  context "when state is persisted" do
+    context "to file" do
+      let(:settings) do
+        {
+          "statement" => "SELECT * FROM test_table",
+          "record_last_run" => true
+        }
+      end
+
+      before do
+        plugin.register
+      end
+
+      after do
+        plugin.stop
+      end
+
+      context "with default last_run_metadata_path" do
+        it "should save state in data.data subpath" do
+          path = LogStash::SETTINGS.get_value("path.data")
+          expect(plugin.last_run_metadata_file_path).to start_with(path)
+        end
+      end
+
+      context "with customized last_run_metadata_path" do
+        let(:settings) { super().merge({ "last_run_metadata_path" => Stud::Temporary.pathname })}
+
+        it "should save state in data.data subpath" do
+          expect(plugin.last_run_metadata_file_path).to start_with(settings["last_run_metadata_path"])
+        end
+      end
+    end
+
+    context "with customized last_run_metadata_path point to directory" do
+      let(:settings) do
+        path = Stud::Temporary.pathname
+        Pathname.new(path).tap {|path| path.mkpath}
+        super().merge({ "last_run_metadata_path" => path})
+      end
+
+      it "raise configuration error" do
+        expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+      end
+    end
+  end
+
 
   context "when setting fetch size" do
 

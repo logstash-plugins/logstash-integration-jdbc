@@ -244,7 +244,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     settings = defined?(LogStash::SETTINGS) ? LogStash::SETTINGS : nil
 
     if @record_last_run
-      if l@ast_run_metadata_path.nil?
+      if @last_run_metadata_path.nil?
         logstash_data_path = settings.get_value("path.data")
         logstash_data_path = Pathname.new(logstash_data_path).join("plugins", "inputs", "jdbc")
         # Ensure that the filepath exists before writing, since it's deeply nested.
@@ -253,7 +253,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       else
         #  validate the path is a file and not a directory
         if Pathname.new(@last_run_metadata_path).directory?
-          raise ArgumentError.new("The \"last_run_metadata_path\" argument must point to a file, received a directory: \"#{last_run_metadata_path}\"")
+          raise LogStash::ConfigurationError.new("The \"last_run_metadata_path\" argument must point to a file, received a directory: \"#{last_run_metadata_path}\"")
         end
         @last_run_metadata_file_path = @last_run_metadata_path
       end
