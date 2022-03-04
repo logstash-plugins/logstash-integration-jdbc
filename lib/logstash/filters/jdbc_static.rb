@@ -152,6 +152,10 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   public
 
   def register
+    # This check is Logstash 5 specific.  If the class does not exist, and it
+    # won't in older versions of Logstash, then we need to set it to nil.
+    @settings = defined?(LogStash::SETTINGS) ? LogStash::SETTINGS : nil
+
     prepare_data_dir
     prepare_runner
   end
@@ -177,7 +181,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   def prepare_data_dir
     # later, when local persistent databases are allowed set this property to LS_HOME/data/jdbc-static/
     # must take multi-pipelines into account and more than one config using the same jdbc-static settings
-    path_data = Pathname.new(settings.get_value("path.data")).join("plugins", "filter", "jdbc_static")
+    path_data = Pathname.new(@settings.get_value("path.data")).join("plugins", "filter", "jdbc_static")
     path_data.mkpath
     java.lang.System.setProperty("derby.system.home", path_data.to_path)
     logger.info("derby.system.home is: #{java.lang.System.getProperty("derby.system.home")}")
