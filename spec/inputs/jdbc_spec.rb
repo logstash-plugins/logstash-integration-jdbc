@@ -1161,6 +1161,39 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "update the previous default last_run_metadata_path" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test_table",
+        "record_last_run" => true
+      }
+    end
+
+    let(:fake_home) do
+       path = Stud::Temporary.pathname
+       Pathname.new(path).tap {|path| path.mkpath}
+       path
+    end
+
+    context "when a file exists" do
+      before do
+        # in a faked HOME folder save a valid previous last_run metadata file
+        ENV['HOME'] = fake_home
+        File.open("#{ENV['HOME']}/.logstash_jdbc_last_run", 'w') do |file|
+            file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
+        end
+      end
+
+      it "should be moved" do
+        plugin.register
+
+        expect(::File.exist?("#{ENV['HOME']}/.logstash_jdbc_last_run")).to be false
+        path = LogStash::SETTINGS.get_value("path.data")
+        full_path = "#{path}/plugins/inputs/jdbc/logstash_jdbc_last_run"
+        expect(::File.exist?(full_path)).to be true
+      end
+    end
+  end
 
   context "when setting fetch size" do
 

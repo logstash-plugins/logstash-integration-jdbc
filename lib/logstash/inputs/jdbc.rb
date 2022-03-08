@@ -9,6 +9,7 @@ require "logstash/plugin_mixins/ecs_compatibility_support/target_check"
 require "logstash/plugin_mixins/validator_support/field_reference_validation_adapter"
 
 require "logstash/plugin_mixins/event_support/event_factory_adapter"
+require "fileutils"
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
 require_relative "tzinfo_jruby_patch"
@@ -249,7 +250,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         logstash_data_path = Pathname.new(logstash_data_path).join("plugins", "inputs", "jdbc")
         # Ensure that the filepath exists before writing, since it's deeply nested.
         logstash_data_path.mkpath
-        @last_run_metadata_file_path = logstash_data_path.join("logstash_jdbc_last_run").to_path
+        logstash_data_file_path = logstash_data_path.join("logstash_jdbc_last_run").to_path
+
+        ensure_default_metadatafile_location(logstash_data_file_path)
+
+        @last_run_metadata_file_path = logstash_data_file_path
       else
         #  validate the path is a file and not a directory
         if Pathname.new(@last_run_metadata_path).directory?
@@ -387,4 +392,20 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       value
     end
   end
+
+  def ensure_default_metadatafile_location(metadata_new_path)
+    old_default_path = Pathname.new("#{ENV['HOME']}/.logstash_jdbc_last_run")
+    if old_default_path.exist?
+      begin
+        # Previous versions of the plugin hosted the state file into $HOME/.logstash_jdbc_last_run.
+        # If there is a permission error in the move to the new location inform the user to give
+        # the correct access right before start
+        FileUtils.mv(old_default_path.to_path, metadata_new_path)
+      rescue Errno::EPERM => e
+        @logger.error("Can't move file #{old_default_path}, please give the correct access right before.")
+        raise LogStash::ConfigurationError("Can't move the 'last_run_metadata_path' from an old default path rooted in $HOME to new 'data.path' subfolder")
+      end
+    end
+  end
+
 end end end # class LogStash::Inputs::Jdbc
