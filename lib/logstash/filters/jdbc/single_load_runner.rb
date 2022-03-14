@@ -26,10 +26,6 @@ module LogStash module Filters module Jdbc
     def repeated_load
     end
 
-    def call
-      repeated_load
-    end
-
     def reload_count
       @reload_counter.value
     end

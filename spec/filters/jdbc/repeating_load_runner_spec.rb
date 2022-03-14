@@ -17,7 +17,7 @@ module LogStash module Filters module Jdbc
         expect(local_db).to receive(:populate_all).once.with(loaders)
         expect(local_db).to receive(:repopulate_all).once.with(loaders)
         runner.initial_load
-        subject.call
+        subject.repeated_load
       end
     end
   end

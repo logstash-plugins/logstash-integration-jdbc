@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-integration-jdbc'
-  s.version         = '5.2.3'
+  s.version         = '5.2.4'
   s.licenses = ['Apache License (2.0)']
   s.summary         = "Integration with JDBC - input and filter plugins"
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
@@ -34,7 +34,9 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
-  s.add_runtime_dependency 'rufus-scheduler', '~> 3.0.9'
+  # plugin maintains compatibility with < 3.5 (3.0.9)
+  # but works with newer rufus-scheduler >= 3.5 as well
+  s.add_runtime_dependency 'rufus-scheduler'
   s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.3'
   s.add_runtime_dependency "logstash-mixin-validator_support", '~> 1.0'
   s.add_runtime_dependency "logstash-mixin-event_support", '~> 1.0'
