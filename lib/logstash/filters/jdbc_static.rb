@@ -179,7 +179,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   def prepare_data_dir
     # cleanup existing Derby file left behind in $HOME
     derby_log = "#{ENV['HOME']}/derby.log"
-    if (::File.exist?(derby_log))
+    if ::File.exist?(derby_log)
       begin
         ::File.delete()
       rescue Errno::EPERM => e
