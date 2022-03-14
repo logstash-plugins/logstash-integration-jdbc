@@ -177,6 +177,18 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   private
 
   def prepare_data_dir
+    # cleanup existing Derby file left behind in $HOME
+    derby_log = "#{ENV['HOME']}/derby.log"
+    if (::File.exist?(derby_log))
+      begin
+        ::File.delete()
+      rescue Errno::EPERM => e
+        @logger.warn("Can't move file #{derby_log} due to access permissions")
+      rescue e
+        @logger.warn("Can't move file #{derby_log}", {message => e.message})
+      end
+    end
+
     # later, when local persistent databases are allowed set this property to LS_HOME/data/jdbc-static/
     # must take multi-pipelines into account and more than one config using the same jdbc-static settings
     path_data = Pathname.new(@settings.get_value("path.data")).join("plugins", "filter", "jdbc_static")
