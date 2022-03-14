@@ -152,9 +152,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   public
 
   def register
-    # This check is Logstash 5 specific.  If the class does not exist, and it
-    # won't in older versions of Logstash, then we need to set it to nil.
-    @settings = defined?(LogStash::SETTINGS) ? LogStash::SETTINGS : nil
+    @settings = LogStash::SETTINGS
 
     prepare_data_dir
     prepare_runner

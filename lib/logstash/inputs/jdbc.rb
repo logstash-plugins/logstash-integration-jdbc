@@ -240,13 +240,9 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   def register
     @logger = self.logger
 
-    # This check is Logstash 5 specific.  If the class does not exist, and it
-    # won't in older versions of Logstash, then we need to set it to nil.
-    settings = defined?(LogStash::SETTINGS) ? LogStash::SETTINGS : nil
-
     if @record_last_run
       if @last_run_metadata_path.nil?
-        logstash_data_path = settings.get_value("path.data")
+        logstash_data_path = LogStash::SETTINGS.get_value("path.data")
         logstash_data_path = Pathname.new(logstash_data_path).join("plugins", "inputs", "jdbc")
         # Ensure that the filepath exists before writing, since it's deeply nested.
         logstash_data_path.mkpath
