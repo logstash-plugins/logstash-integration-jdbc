@@ -246,11 +246,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         logstash_data_path = Pathname.new(logstash_data_path).join("plugins", "inputs", "jdbc")
         # Ensure that the filepath exists before writing, since it's deeply nested.
         logstash_data_path.mkpath
-        logstash_data_file_path = logstash_data_path.join("logstash_jdbc_last_run").to_path
+        logstash_data_file_path = logstash_data_path.join("logstash_jdbc_last_run")
 
         ensure_default_metadatafile_location(logstash_data_file_path)
 
-        @last_run_metadata_file_path = logstash_data_file_path
+        @last_run_metadata_file_path = logstash_data_file_path.to_path
       else
         #  validate the path is a file and not a directory
         if Pathname.new(@last_run_metadata_path).directory?
@@ -391,15 +391,18 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   def ensure_default_metadatafile_location(metadata_new_path)
     old_default_path = Pathname.new("#{ENV['HOME']}/.logstash_jdbc_last_run")
-    if old_default_path.exist?
+
+    if old_default_path.exist? && !metadata_new_path.exist?
+      # Previous versions of the plugin hosted the state file into $HOME/.logstash_jdbc_last_run.
+      # Copy in the new location
+      FileUtils.cp(old_default_path.to_path, metadata_new_path.to_path)
       begin
-        # Previous versions of the plugin hosted the state file into $HOME/.logstash_jdbc_last_run.
-        # If there is a permission error in the move to the new location inform the user to give
-        # the correct access right before start
-        FileUtils.mv(old_default_path.to_path, metadata_new_path)
-      rescue Errno::EPERM => e
-        @logger.error("Can't move file #{old_default_path}, please give the correct access right before.")
-        raise LogStash::ConfigurationError("Can't move the 'last_run_metadata_path' from an old default path rooted in $HOME to new 'data.path' subfolder")
+        # If there is a permission error in the delete of the old file inform the user to give
+        # the correct access rights
+        ::File.delete(old_default_path.to_path)
+        @logger.info("Successfully moved the #{old_default_path.to_path} into #{metadata_new_path.to_path}")
+      rescue e
+        @logger.warn("Using new metadata file at #{metadata_new_path.to_path} but #{old_default_path} can't be removed.")
       end
     end
   end

@@ -52,6 +52,9 @@ describe LogStash::Inputs::Jdbc do
       db.drop_table(:types_table)
       db.drop_table(:test1_table)
     end
+
+    last_run_default_path = LogStash::SETTINGS.get_value("path.data")
+    FileUtils.rm_f("#{last_run_default_path}/plugins/inputs/jdbc/logstash_jdbc_last_run")
   end
 
   context "when registering and tearing down" do
@@ -1180,7 +1183,7 @@ describe LogStash::Inputs::Jdbc do
         # in a faked HOME folder save a valid previous last_run metadata file
         ENV['HOME'] = fake_home
         File.open("#{ENV['HOME']}/.logstash_jdbc_last_run", 'w') do |file|
-            file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
+          file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
         end
       end
 
