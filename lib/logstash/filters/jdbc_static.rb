@@ -152,8 +152,6 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   public
 
   def register
-    @settings = LogStash::SETTINGS
-
     prepare_data_dir
     prepare_runner
   end
@@ -183,15 +181,15 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
       begin
         ::File.delete()
       rescue Errno::EPERM => e
-        @logger.warn("Can't move file #{derby_log} due to access permissions")
+        @logger.warn("Can't delete file #{derby_log} due to access permissions")
       rescue e
-        @logger.warn("Can't move file #{derby_log}", {message => e.message})
+        @logger.warn("Can't delete file #{derby_log}", {message => e.message})
       end
     end
 
     # later, when local persistent databases are allowed set this property to LS_HOME/data/jdbc-static/
     # must take multi-pipelines into account and more than one config using the same jdbc-static settings
-    path_data = Pathname.new(@settings.get_value("path.data")).join("plugins", "filter", "jdbc_static")
+    path_data = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "filter", "jdbc_static")
     path_data.mkpath
     java.lang.System.setProperty("derby.system.home", path_data.to_path)
     logger.info("derby.system.home is: #{java.lang.System.getProperty("derby.system.home")}")
