@@ -287,9 +287,9 @@ JDBC connection string
   * There is no default value for this setting.
 
 [id="plugins-{type}s-{plugin}-jdbc_timezone_conv"]
-Timezone conversion
+====== Timezone conversion
 
-Logstash (and Elasticsearch) expects that timestamps are expressed in UTC terms.
+Logstash and Elasticsearch expect timestamps to be expressed in UTC terms.
 If your database has recorded timestamps that are relative to another timezone,
 the database timezone if you will, then set this setting to be the timezone that
 the database is using. However, as SQL does not allow for timezone data in
@@ -302,7 +302,7 @@ of using the timezone setting of the local machine.  You must use a canonical
 timezone, `America/Denver`, for example.
 
 [id="plugins-{type}s-{plugin}-jdbc_ambiguous_timestamps"]
-Ambiguous timestamps
+===== Ambiguous timestamps
 
 While it is common to store local times in SQL's timestamp column type, many timezones change their offset during the course of a calendar year and therefore cannot be used with SQL's timestamp type to represent an ordered, continuous timeline.
 For example in the `America/Chicago` zone when daylight saving time (DST) ends in the autumn, the clock rolls from `01:59:59` back to `01:00:00`, making any timestamp in the 2-hour period between `01:00:00CDT` and `02:00:00CST` on that day ambiguous.

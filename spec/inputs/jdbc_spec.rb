@@ -1484,12 +1484,8 @@ describe LogStash::Inputs::Jdbc do
       let(:jdbc_default_timezone) { 'America/Chicago' }
 
       it 'the error results in helpful log warning' do
-        # logger = plugin.instance_variable_get(:@logger)
-        # puts("LOGGER: METHOD(#{plugin.logger.inspect}) IVAR(#{logger.inspect})")
         plugin.run(queue)
-        # expect(plugin.logger).to have_received(:warn) { |*actual_args| puts "WARN>>#{actual_args.inspect}" }
         expect(plugin.logger).to have_received(:warn).with(a_string_including("Exception when executing JDBC query"), a_hash_including(:exception => a_string_including("2021-11-07 01:23:45 is an ambiguous local time")))
-        # expect { plugin.run(queue) }.to_not raise_error(::Sequel::InvalidValue, /AmbiguousTime/)
       end
     end
   end
