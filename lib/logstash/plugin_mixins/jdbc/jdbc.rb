@@ -56,6 +56,9 @@ module LogStash  module PluginMixins module Jdbc
       # Be aware that ordering is not guaranteed between queries.
       config :jdbc_paging_enabled, :validate => :boolean, :default => false
 
+      # Which pagination mode to use, automatic pagination or explicitly defined in the query.
+      config :jdbc_paging_mode, :validate => [ "auto", "explicit" ], :default => "auto"
+
       # JDBC page size
       config :jdbc_page_size, :validate => :number, :default => 100000
 
@@ -213,7 +216,7 @@ module LogStash  module PluginMixins module Jdbc
         open_jdbc_connection
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
+        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
@@ -222,7 +225,8 @@ module LogStash  module PluginMixins module Jdbc
              Sequel::DatabaseError,
              Sequel::InvalidValue,
              Java::JavaSql::SQLException => e
-        details = { :exception => e.message }
+        details = { exception: e.class, message: e.message }
+        details[:cause] = e.cause.inspect if e.cause
         details[:backtrace] = e.backtrace if @logger.debug?
         @logger.warn("Exception when executing JDBC query", details)
       else

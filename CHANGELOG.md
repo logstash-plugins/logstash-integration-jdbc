@@ -1,7 +1,35 @@
-## 5.2.0
+## 5.3.0
  - Ambiguous Timestamp Support [#92](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/92)
   - FIX: when encountering an ambiguous timestamp, the JDBC Input no longer crashes
   - Added support for disambiguating timestamps in daylight saving time (DST) overlap periods
+
+## 5.2.4
+  - Fix: compatibility with all (>= 3.0) rufus-scheduler versions [#97](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/97) 
+
+## 5.2.3
+  - Performance: avoid contention on scheduler execution [#103](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/103)
+
+## 5.2.2
+  - Feat: name scheduler threads + redirect error logging [#102](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/102)
+
+## 5.2.1
+  - Refactor: isolate paginated normal statement algorithm in a separate handler [#101](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/101)
+
+## 5.2.0
+  - Added `jdbc_paging_mode` option to choose if use `explicit` pagination in statements and avoid the initial count 
+    query or use `auto` to delegate to the underlying library [#95](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/95)
+
+## 5.1.10
+  - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
+    the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).
+
+    NOTE: a fatal driver error will no longer keep reloading the pipeline and now leads to a system exit. 
+
+  - Fix: regression due returning the Java driver class [#98](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/98)
+
+## 5.1.9 (yanked)
+  - Refactor: to explicit Java (driver) class name loading [#96](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/96),
+    the change is expected to provide a more robust fix for the driver loading issue [#83](https://github.com/logstash-plugins/logstash-integration-jdbc/issues/83).
 
 ## 5.1.8
   - Fix the blocking pipeline reload and shutdown when connectivity issues happen [#85](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/85)

@@ -329,6 +329,39 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
+  context "when iterating result-set via explicit paging mode" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+        "jdbc_paging_enabled" => true,
+        "jdbc_paging_mode" => "explicit",
+        "jdbc_page_size" => 10
+      }
+    end
+
+    let(:num_rows) { 15 }
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should fetch all rows" do
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
+      end
+
+      plugin.run(queue)
+
+      expect(queue.size).to eq(num_rows)
+    end
+
+  end
+
   context "when using target option" do
     let(:settings) do
       {
@@ -1485,7 +1518,7 @@ describe LogStash::Inputs::Jdbc do
 
       it 'the error results in helpful log warning' do
         plugin.run(queue)
-        expect(plugin.logger).to have_received(:warn).with(a_string_including("Exception when executing JDBC query"), a_hash_including(:exception => a_string_including("2021-11-07 01:23:45 is an ambiguous local time")))
+        expect(plugin.logger).to have_received(:warn).with(a_string_including("Exception when executing JDBC query"), a_hash_including(:message => a_string_including("2021-11-07 01:23:45 is an ambiguous local time")))
       end
     end
   end
@@ -1663,16 +1696,35 @@ describe LogStash::Inputs::Jdbc do
   describe "jdbc_driver_class" do
     context "when not prefixed with Java::" do
       let(:jdbc_driver_class) { "org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class prefixed with Java::" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(/^Java::/)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
       end
     end
     context "when prefixed with Java::" do
       let(:jdbc_driver_class) { "Java::org.apache.derby.jdbc.EmbeddedDriver" }
-      it "loads the class as-is" do
-        expect(Sequel::JDBC).to receive(:load_driver).with(jdbc_driver_class)
-        plugin.send(:load_driver)
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+    end
+    context "when prefixed with Java." do
+      let(:jdbc_driver_class) { "Java.org::apache::derby::jdbc.EmbeddedDriver" }
+      it "loads the class" do
+        expect { plugin.send(:load_driver) }.not_to raise_error
+      end
+
+      it "can instantiate the returned driver class" do
+        # for drivers where the path through DriverManager fails, Sequel assumes
+        # having a proxied Java class instance (instead of a java.lang.Class) and
+        # does a driver.new.connect https://git.io/JDV6M
+        driver = plugin.send(:load_driver)
+        expect { driver.new }.not_to raise_error
+      end
+    end
+    context "when class name invalid" do
+      let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
+      it "raises a loading error" do
+        expect { plugin.send(:load_driver) }.to raise_error LogStash::PluginLoadingError,
+                                                            /java.lang.ClassNotFoundException: org.apache.NonExistentDriver/
       end
     end
   end
