@@ -179,11 +179,11 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     derby_log = "#{ENV['HOME']}/derby.log"
     if ::File.exist?(derby_log)
       begin
-        ::File.delete()
+        ::File.delete(derby_log)
       rescue Errno::EPERM => e
-        @logger.warn("Can't delete file #{derby_log} due to access permissions")
+        @logger.warn("Can't delete temporary file #{derby_log} due to access permissions")
       rescue e
-        @logger.warn("Can't delete file #{derby_log}", {message => e.message})
+        @logger.warn("Can't delete temporary file #{derby_log}", {message => e.message})
       end
     end
 
