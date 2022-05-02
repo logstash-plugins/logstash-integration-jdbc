@@ -260,7 +260,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     end
 
     set_value_tracker(LogStash::PluginMixins::Jdbc::ValueTracking.build_last_value_tracker(self))
-    set_statement_logger(LogStash::PluginMixins::Jdbc::CheckedCountLogger.new(@logger))
+    set_statement_handler(LogStash::PluginMixins::Jdbc::CheckedCountLogger.new(@logger))
 
     @enable_encoding = !@charset.nil? || !@columns_charset.empty?
 
@@ -283,8 +283,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end # def register
 
   # test injection points
-  def set_statement_logger(instance)
-    @statement_handler = LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self, instance)
+  def set_statement_handler(logger)
+    @statement_handler = LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self, logger)
   end
 
   def set_value_tracker(instance)

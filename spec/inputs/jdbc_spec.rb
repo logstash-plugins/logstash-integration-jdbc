@@ -1447,7 +1447,7 @@ describe LogStash::Inputs::Jdbc do
     before do
       db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
       plugin.register
-      plugin.set_statement_logger(statement_logger)
+      plugin.set_statement_handler(statement_logger)
       plugin.set_value_tracker(value_tracker)
       allow(value_tracker).to receive(:value).and_return("bar")
       allow(statement_logger).to receive(:execute_count).once.and_raise(StandardError.new(msg))
