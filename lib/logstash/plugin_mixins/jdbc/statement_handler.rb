@@ -2,7 +2,7 @@
 
 module LogStash module PluginMixins module Jdbc
   class StatementHandler
-    def self.build_statement_handler(plugin, logger)
+    def self.build_statement_handler(plugin)
       if plugin.use_prepared_statements
         klass = PreparedStatementHandler
       else
@@ -16,27 +16,39 @@ module LogStash module PluginMixins module Jdbc
           klass = NormalStatementHandler
         end
       end
-      klass.new(plugin, logger)
+      klass.new(plugin)
     end
 
-    attr_reader :statement, :parameters, :statement_logger
+    attr_reader :statement, :parameters
 
-    def initialize(plugin, statement_logger)
+    def initialize(plugin)
       @statement = plugin.statement
-      @statement_logger = statement_logger
-      post_init(plugin)
     end
 
     def build_query(db, sql_last_value)
-      # override in subclass
+      fail NotImplementedError # override in subclass
     end
 
-    def post_init(plugin)
-      # override in subclass, if needed
-    end
   end
 
   class NormalStatementHandler < StatementHandler
+
+    attr_reader :parameters
+
+    def initialize(plugin)
+      super(plugin)
+      @parameter_keys = ["sql_last_value"] + plugin.parameters.keys
+      @parameters = plugin.parameters.inject({}) do |hash,(k,v)|
+        case v
+        when LogStash::Timestamp
+          hash[k.to_sym] = v.time
+        else
+          hash[k.to_sym] = v
+        end
+        hash
+      end
+    end
+
     # Performs the query, yielding once per row of data
     # @param db [Sequel::Database]
     # @param sql_last_value [Integer|DateTime|Time]
@@ -52,29 +64,17 @@ module LogStash module PluginMixins module Jdbc
 
     def build_query(db, sql_last_value)
       parameters[:sql_last_value] = sql_last_value
-      query = db[statement, parameters]
-      statement_logger.log_statement_parameters(statement, parameters, query)
-      query
+      db[statement, parameters]
     end
 
-    def post_init(plugin)
-      @statement_logger.disable_count
-
-      @parameter_keys = ["sql_last_value"] + plugin.parameters.keys
-      @parameters = plugin.parameters.inject({}) do |hash,(k,v)|
-        case v
-        when LogStash::Timestamp
-          hash[k.to_sym] = v.time
-        else
-          hash[k.to_sym] = v
-        end
-        hash
-      end
-    end
   end
 
   class PagedNormalStatementHandler < NormalStatementHandler
-    attr_reader :jdbc_page_size
+
+    def initialize(plugin)
+      super(plugin)
+      @jdbc_page_size = plugin.jdbc_page_size
+    end
 
     # Performs the query, respecting our pagination settings, yielding once per row of data
     # @param db [Sequel::Database]
@@ -89,10 +89,6 @@ module LogStash module PluginMixins module Jdbc
       end
     end
 
-    def post_init(plugin)
-      super(plugin)
-      @jdbc_page_size = plugin.jdbc_page_size
-    end
   end
 
   class ExplicitPagingModeStatementHandler < PagedNormalStatementHandler
@@ -103,20 +99,29 @@ module LogStash module PluginMixins module Jdbc
     def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
       offset = 0
+      page_size = @jdbc_page_size
       loop do
         rows_in_page = 0
-        query.with_sql(query.sql, offset: offset, size: jdbc_page_size).each do |row|
+        query.with_sql(query.sql, offset: offset, size: page_size).each do |row|
           yield row
           rows_in_page += 1
         end
-        break unless rows_in_page == jdbc_page_size
-        offset += jdbc_page_size
+        break unless rows_in_page == page_size
+        offset += page_size
       end
     end
   end
 
   class PreparedStatementHandler < StatementHandler
-    attr_reader :name, :bind_values_array, :statement_prepared, :prepared
+    attr_reader :name, :bind_values_array, :statement_prepared, :prepared, :parameters
+
+    def initialize(plugin)
+      super(plugin)
+      @name = plugin.prepared_statement_name.to_sym
+      @bind_values_array = plugin.prepared_statement_bind_values
+      @parameters = plugin.parameters
+      @statement_prepared = Concurrent::AtomicBoolean.new(false)
+    end
 
     # Performs the query, ignoring our pagination settings, yielding once per row of data
     # @param db [Sequel::Database]
@@ -144,7 +149,6 @@ module LogStash module PluginMixins module Jdbc
         db.set_prepared_statement(name, prepared)
       end
       bind_value_sql_last_value(sql_last_value)
-      statement_logger.log_statement_parameters(statement, parameters, nil)
       begin
         db.call(name, parameters)
       rescue => e
@@ -153,17 +157,6 @@ module LogStash module PluginMixins module Jdbc
         statement_prepared.make_false
         raise e
       end
-    end
-
-    def post_init(plugin)
-      # don't log statement count when using prepared statements for now...
-      # needs enhancement to allow user to supply a bindable count prepared statement in settings.
-      @statement_logger.disable_count
-
-      @name = plugin.prepared_statement_name.to_sym
-      @bind_values_array = plugin.prepared_statement_bind_values
-      @parameters = plugin.parameters
-      @statement_prepared = Concurrent::AtomicBoolean.new(false)
     end
 
     def create_bind_values_hash
