@@ -58,6 +58,8 @@ module LogStash module PluginMixins module Jdbc
     end
 
     def post_init(plugin)
+      @statement_logger.disable_count
+
       @parameter_keys = ["sql_last_value"] + plugin.parameters.keys
       @parameters = plugin.parameters.inject({}) do |hash,(k,v)|
         case v
