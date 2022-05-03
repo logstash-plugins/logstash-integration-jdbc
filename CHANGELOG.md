@@ -1,3 +1,6 @@
+## 5.2.5
+  - Fix: do not execute more queries with debug logging [#109](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/109)
+
 ## 5.2.4
   - Fix: compatibility with all (>= 3.0) rufus-scheduler versions [#97](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/97) 
 
