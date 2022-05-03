@@ -74,6 +74,7 @@ module LogStash module PluginMixins module Jdbc
     def initialize(plugin)
       super(plugin)
       @jdbc_page_size = plugin.jdbc_page_size
+      @logger = plugin.logger
     end
 
     # Performs the query, respecting our pagination settings, yielding once per row of data
@@ -83,10 +84,20 @@ module LogStash module PluginMixins module Jdbc
     def perform_query(db, sql_last_value)
       query = build_query(db, sql_last_value)
       query.each_page(@jdbc_page_size) do |paged_dataset|
+        log_dataset_page(paged_dataset) if @logger.debug?
         paged_dataset.each do |row|
           yield row
         end
       end
+    end
+
+    private
+
+    # @param paged_dataset [Sequel::Dataset::Pagination] like object
+    def log_dataset_page(paged_dataset)
+      @logger.debug "fetching paged dataset", current_page: paged_dataset.current_page,
+                                              record_count: paged_dataset.current_page_record_count,
+                                              total_record_count: paged_dataset.pagination_record_count
     end
 
   end
