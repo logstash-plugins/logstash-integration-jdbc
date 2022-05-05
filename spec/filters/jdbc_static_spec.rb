@@ -90,7 +90,7 @@ module LogStash module Filters
       it "should be set into Logstash data path" do
         plugin.register
 
-        expected = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "filter", "jdbc_static").to_path
+        expected = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "shared", "derby_home").to_path
         expect(java.lang.System.getProperty("derby.system.home")).to eq(expected)
       end
     end
