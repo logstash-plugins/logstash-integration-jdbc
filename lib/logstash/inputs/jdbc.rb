@@ -319,22 +319,22 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   def run(queue)
     load_driver
     if @schedule
-      # scheduler input thread (Java) name example: "[my-oracle]<jdbc"
-      @scheduler = start_cron_scheduler!(@schedule) { execute_query(queue) }
-      @scheduler.join
+      # scheduler input thread name example: "[my-oracle]|input|jdbc|scheduler"
+      scheduler.cron(@schedule) { execute_query(queue) }
+      scheduler.join
     else
       execute_query(queue)
     end
   end # def run
 
-  def close
-    @scheduler.shutdown if @scheduler
-  end
-
-  def stop
-    close_jdbc_connection
-    @scheduler.shutdown(:wait) if @scheduler
-  end
+  # def close
+  #   @scheduler.shutdown if @scheduler
+  # end
+  #
+  # def stop
+  #   close_jdbc_connection
+  #   release_scheduler!
+  # end
 
   private
 
