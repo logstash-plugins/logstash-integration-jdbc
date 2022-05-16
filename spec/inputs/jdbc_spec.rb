@@ -252,15 +252,14 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "cleans up scheduler resources on close" do
-      runner = Thread.new do
+      Thread.start do
         plugin.run(queue)
       end
       sleep 1
-      plugin.do_close
-
-      scheduler = plugin.instance_variable_get(:@scheduler)
+      scheduler = plugin.scheduler
       expect(scheduler).to_not be_nil
-      expect(scheduler.down?).to be_truthy
+      plugin.do_close
+      expect(scheduler.shutdown?).to be_truthy
     end
 
   end
