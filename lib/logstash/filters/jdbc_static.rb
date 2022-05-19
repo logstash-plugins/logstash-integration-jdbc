@@ -175,9 +175,23 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   private
 
   def prepare_data_dir
+    # cleanup existing Derby file left behind in $HOME
+    derby_log = "#{ENV['HOME']}/derby.log"
+    if ::File.exist?(derby_log)
+      begin
+        ::File.delete(derby_log)
+      rescue Errno::EPERM => e
+        @logger.warn("Can't delete temporary file #{derby_log} due to access permissions")
+      rescue e
+        @logger.warn("Can't delete temporary file #{derby_log}", {message => e.message})
+      end
+    end
+
     # later, when local persistent databases are allowed set this property to LS_HOME/data/jdbc-static/
     # must take multi-pipelines into account and more than one config using the same jdbc-static settings
-    java.lang.System.setProperty("derby.system.home", ENV["HOME"])
+    path_data = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "shared", "derby_home")
+    path_data.mkpath
+    java.lang.System.setProperty("derby.system.home", path_data.to_path)
     logger.info("derby.system.home is: #{java.lang.System.getProperty("derby.system.home")}")
   end
 

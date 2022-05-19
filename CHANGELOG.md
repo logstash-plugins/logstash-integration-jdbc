@@ -1,3 +1,6 @@
+## 5.2.6
+  - Fix: change default path of 'last_run_metadata_path' to be rooted in the LS data.path folder and not in $HOME [#106](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/106)
+
 ## 5.2.5
   - Fix: do not execute more queries with debug logging [#109](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/109)
 

@@ -9,6 +9,7 @@ require "timecop"
 require "stud/temporary"
 require "time"
 require "date"
+require "pathname"
 
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
@@ -51,6 +52,9 @@ describe LogStash::Inputs::Jdbc do
       db.drop_table(:types_table)
       db.drop_table(:test1_table)
     end
+
+    last_run_default_path = LogStash::SETTINGS.get_value("path.data")
+    FileUtils.rm_f("#{last_run_default_path}/plugins/inputs/jdbc/logstash_jdbc_last_run")
   end
 
   context "when registering and tearing down" do
@@ -1111,6 +1115,86 @@ describe LogStash::Inputs::Jdbc do
 
     it "should not save state if :record_last_run is false" do
       expect(File).not_to exist(settings["last_run_metadata_path"])
+    end
+  end
+
+  context "when state is persisted" do
+    context "to file" do
+      let(:settings) do
+        {
+          "statement" => "SELECT * FROM test_table",
+          "record_last_run" => true
+        }
+      end
+
+      before do
+        plugin.register
+      end
+
+      after do
+        plugin.stop
+      end
+
+      context "with default last_run_metadata_path" do
+        it "should save state in data.data subpath" do
+          path = LogStash::SETTINGS.get_value("path.data")
+          expect(plugin.last_run_metadata_file_path).to start_with(path)
+        end
+      end
+
+      context "with customized last_run_metadata_path" do
+        let(:settings) { super().merge({ "last_run_metadata_path" => Stud::Temporary.pathname })}
+
+        it "should save state in data.data subpath" do
+          expect(plugin.last_run_metadata_file_path).to start_with(settings["last_run_metadata_path"])
+        end
+      end
+    end
+
+    context "with customized last_run_metadata_path point to directory" do
+      let(:settings) do
+        path = Stud::Temporary.pathname
+        Pathname.new(path).tap {|path| path.mkpath}
+        super().merge({ "last_run_metadata_path" => path})
+      end
+
+      it "raise configuration error" do
+        expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+      end
+    end
+  end
+
+  context "update the previous default last_run_metadata_path" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test_table",
+        "record_last_run" => true
+      }
+    end
+
+    let(:fake_home) do
+       path = Stud::Temporary.pathname
+       Pathname.new(path).tap {|path| path.mkpath}
+       path
+    end
+
+    context "when a file exists" do
+      before do
+        # in a faked HOME folder save a valid previous last_run metadata file
+        allow(ENV).to receive(:[]).with('HOME').and_return(fake_home)
+        File.open("#{ENV['HOME']}/.logstash_jdbc_last_run", 'w') do |file|
+          file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
+        end
+      end
+
+      it "should be moved" do
+        plugin.register
+
+        expect(::File.exist?("#{ENV['HOME']}/.logstash_jdbc_last_run")).to be false
+        path = LogStash::SETTINGS.get_value("path.data")
+        full_path = "#{path}/plugins/inputs/jdbc/logstash_jdbc_last_run"
+        expect(::File.exist?(full_path)).to be true
+      end
     end
   end
 
