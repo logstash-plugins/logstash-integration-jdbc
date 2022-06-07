@@ -1705,7 +1705,7 @@ describe LogStash::Inputs::Jdbc do
       let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
       it "raises a loading error" do
         expect { plugin.send(:load_driver) }.to raise_error LogStash::PluginLoadingError,
-                                                            /java.lang.ClassNotFoundException: org.apache.NonExistentDriver/
+                                                            /ClassNotFoundException: org.apache.NonExistentDriver/
       end
     end
   end
