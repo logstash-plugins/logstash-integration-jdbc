@@ -3,12 +3,11 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/common"
 require "logstash/plugin_mixins/jdbc/jdbc"
-require "logstash/plugin_mixins/jdbc/scheduler"
 require "logstash/plugin_mixins/ecs_compatibility_support"
 require "logstash/plugin_mixins/ecs_compatibility_support/target_check"
 require "logstash/plugin_mixins/validator_support/field_reference_validation_adapter"
-
 require "logstash/plugin_mixins/event_support/event_factory_adapter"
+require "logstash/plugin_mixins/scheduler"
 require "fileutils"
 
 # this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
@@ -147,6 +146,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # adds :field_reference validator adapter
   extend LogStash::PluginMixins::ValidatorSupport::FieldReferenceValidationAdapter
 
+  include LogStash::PluginMixins::Scheduler
+
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
@@ -260,7 +261,6 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       end
     end
 
-    require "rufus/scheduler"
     prepare_jdbc_connection
 
     if @use_column_value
@@ -319,22 +319,16 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   def run(queue)
     load_driver
     if @schedule
-      # input thread (Java) name example "[my-oracle]<jdbc"
-      @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.
-          start_cron_scheduler(@schedule, thread_name: "[#{id}]<jdbc__scheduler") { execute_query(queue) }
-      @scheduler.join
+      # scheduler input thread name example: "[my-oracle]|input|jdbc|scheduler"
+      scheduler.cron(@schedule) { execute_query(queue) }
+      scheduler.join
     else
       execute_query(queue)
     end
   end # def run
 
-  def close
-    @scheduler.shutdown if @scheduler
-  end
-
   def stop
     close_jdbc_connection
-    @scheduler.shutdown(:wait) if @scheduler
   end
 
   private
