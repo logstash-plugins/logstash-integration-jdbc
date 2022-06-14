@@ -21,7 +21,13 @@ include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
-This filter executes a SQL query and store the result set in the field
+//We could use a better general, introductory description here. 
+
+TIP: If you need to process static data or that doesn't change often,
+consider using the {logstash-ref}/plugins-filters-jdbc_static.html[JDBC static
+filter plugin] instead. 
+
+This filter executes a SQL query and stores the result set in the field
 specified as `target`.
 It will cache the results locally in an LRU cache with expiry.
 
@@ -46,7 +52,7 @@ filter {
 [id="plugins-{type}s-{plugin}-prepared_statements"]
 ==== Prepared Statements
 
-Using server side prepared statements can speed up execution times as the server optimises the query plan and execution.
+Using server side prepared statements can speed up execution times as the server optimizes the query plan and execution.
 
 NOTE: Not all JDBC accessible technologies will support prepared statements.
 

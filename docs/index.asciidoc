@@ -15,18 +15,32 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}s-{plugin}"]
 
-=== JDBC Integration Plugin
+=== JDBC integration plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-The JDBC Integration Plugin provides integrated plugins for working with databases that provide JDBC drivers:
+The JDBC Integration Plugin provides integrated plugins for working with
+databases that provide JDBC drivers:
 
- - {logstash-ref}/plugins-inputs-jdbc.html[JDBC Input Plugin]
- - {logstash-ref}/plugins-filters-jdbc_static.html[JDBC Static Filter Plugin]
- - {logstash-ref}/plugins-filters-jdbc_streaming.html[JDBC Streaming Filter Plugin]
+ - {logstash-ref}/plugins-inputs-jdbc.html[JDBC input plugin]
+ - {logstash-ref}/plugins-filters-jdbc_static.html[JDBC static filter plugin]
+ - {logstash-ref}/plugins-filters-jdbc_streaming.html[JDBC streaming filter plugin]
+
+[id="plugins-{type}s-{plugin}-static_or_streaming"]
+===== JDBC static or JDBC streaming?
+
+The JDBC integration plugin offers two JDBC filtering options--JDBC static and
+JDBC streaming. Use the one that best fits your use case.
+
+* **{logstash-ref}/plugins-filters-jdbc_static.html[JDBC static filter].** 
+Best suited for enriching events with reference data that is static or does not
+change very often, such as environments, users, and products.
+
+* **{logstash-ref}/plugins-filters-jdbc_streaming.html[JDBC streaming filter].** 
+Best suited for filtering data that is transmitted in a steady, continuous flow.
+This plugin continues to receive incoming data while data received earlier is
+being processed. 
 
 :no_codec!:
-
-
