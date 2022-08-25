@@ -157,6 +157,11 @@ module LogStash  module PluginMixins module Jdbc
       @database.extension(:pagination)
       if @jdbc_default_timezone
         @database.extension(:named_timezones)
+        # fix issue related to Error: TZInfo::AmbiguousTime: 2015-10-25T02:10:03+00:00 is an ambiguous local time
+        # See related issues : 
+        # - https://github.com/logstash-plugins/logstash-input-jdbc/issues/121
+        # - https://github.com/tzinfo/tzinfo/issues/32
+        Sequel.tzinfo_disambiguator = proc{|datetime, periods| periods.first}
         @database.timezone = @jdbc_default_timezone
       end
       if @jdbc_validate_connection
