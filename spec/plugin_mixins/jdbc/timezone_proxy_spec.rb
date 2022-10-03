@@ -45,8 +45,14 @@ describe LogStash::PluginMixins::Jdbc::TimezoneProxy do
         expect(timezone).to be(timezone_spec)
       end
     end
+    context 'when spec is a valid unextended timezone spec' do
+      let(:timezone_spec) { 'America/Los_Angeles' }
+      it 'returns the canonical timezone' do
+        expect(timezone).to eq(::TZInfo::Timezone.get('America/Los_Angeles'))
+      end
+    end
     context 'when spec is an invalid timezone spec' do
-      let(:timezone_spec) { ::TZInfo::Timezone.get('NotAValidTimezoneIdentifier') }
+      let(:timezone_spec) { 'NotAValidTimezoneIdentifier' }
 
       it 'propagates the TZInfo exception' do
         expect { timezone }.to raise_exception(::TZInfo::InvalidTimezoneIdentifier)
