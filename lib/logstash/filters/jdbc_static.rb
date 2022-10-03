@@ -3,7 +3,7 @@ require "logstash-integration-jdbc_jars"
 require "logstash/filters/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/ecs_compatibility_support"
-require "logstash/plugin_mixins/jdbc/scheduler"
+require "logstash/plugin_mixins/scheduler"
 require_relative "jdbc/loader"
 require_relative "jdbc/loader_schedule"
 require_relative "jdbc/repeating_load_runner"
@@ -18,6 +18,8 @@ require_relative "jdbc/lookup_processor"
 module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   # adds ecs_compatibility config which could be :disabled or :v1
   include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
+
+  include LogStash::PluginMixins::Scheduler
 
   config_name "jdbc_static"
 
@@ -162,7 +164,6 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   end
 
   def close
-    @scheduler.stop if @scheduler
     @parsed_loaders.each(&:close)
     @processor.close
   end
@@ -175,9 +176,23 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
   private
 
   def prepare_data_dir
+    # cleanup existing Derby file left behind in $HOME
+    derby_log = "#{ENV['HOME']}/derby.log"
+    if ::File.exist?(derby_log)
+      begin
+        ::File.delete(derby_log)
+      rescue Errno::EPERM => e
+        @logger.warn("Can't delete temporary file #{derby_log} due to access permissions")
+      rescue e
+        @logger.warn("Can't delete temporary file #{derby_log}", {message => e.message})
+      end
+    end
+
     # later, when local persistent databases are allowed set this property to LS_HOME/data/jdbc-static/
     # must take multi-pipelines into account and more than one config using the same jdbc-static settings
-    java.lang.System.setProperty("derby.system.home", ENV["HOME"])
+    path_data = Pathname.new(LogStash::SETTINGS.get_value("path.data")).join("plugins", "shared", "derby_home")
+    path_data.mkpath
+    java.lang.System.setProperty("derby.system.home", path_data.to_path)
     logger.info("derby.system.home is: #{java.lang.System.getProperty("derby.system.home")}")
   end
 
@@ -194,13 +209,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
     if @loader_schedule
       @loader_runner = Jdbc::RepeatingLoadRunner.new(*runner_args)
       @loader_runner.initial_load
-      @scheduler = LogStash::PluginMixins::Jdbc::Scheduler.
-          start_cron_scheduler(@loader_schedule, thread_name: "[#{id}]-jdbc_static__scheduler") { @loader_runner.repeated_load }
-      cron_job = @scheduler.cron_jobs.first
-      if cron_job
-        frequency = cron_job.respond_to?(:rough_frequency) ? cron_job.rough_frequency : cron_job.frequency
-        logger.info("Loaders will execute every #{frequency} seconds", loader_schedule: @loader_schedule)
-      end
+      scheduler.cron(@loader_schedule) { @loader_runner.repeated_load }
     else
       @loader_runner = Jdbc::SingleLoadRunner.new(*runner_args)
       @loader_runner.initial_load

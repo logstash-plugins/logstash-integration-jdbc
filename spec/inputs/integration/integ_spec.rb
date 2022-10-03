@@ -41,6 +41,31 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       expect(event.get('first_name')).to eq("Mark")
       expect(event.get('last_name')).to eq("Guckenheimer")
     end
+
+    context 'with paging' do
+      let(:settings) do
+        super().merge 'jdbc_paging_enabled' => true, 'jdbc_page_size' => 1,
+                      "statement" => 'SELECT * FROM "employee" WHERE EMP_NO >= :p1 ORDER BY EMP_NO',
+                      'parameters' => { 'p1' => 0 }
+      end
+
+      before do # change plugin logger level to debug - to exercise logging
+        logger = plugin.class.name.gsub('::', '.').downcase
+        logger = org.apache.logging.log4j.LogManager.getLogger(logger)
+        @prev_logger_level = [ logger.getName, logger.getLevel ]
+        org.apache.logging.log4j.core.config.Configurator.setLevel logger.getName, org.apache.logging.log4j.Level::DEBUG
+      end
+
+      after do
+        org.apache.logging.log4j.core.config.Configurator.setLevel *@prev_logger_level
+      end
+
+      it "should populate the event with database entries" do
+        plugin.run(queue)
+        event = queue.pop
+        expect(event.get('first_name')).to eq('David')
+      end
+    end
   end
 
   context "when supplying a non-existent library" do

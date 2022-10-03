@@ -21,7 +21,7 @@ include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
-This filter executes a SQL query and store the result set in the field
+This filter executes a SQL query and stores the result set in the field
 specified as `target`.
 It will cache the results locally in an LRU cache with expiry.
 

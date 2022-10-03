@@ -1,7 +1,16 @@
+## 5.4.0
+  - Ambiguous Timestamp Support [#92](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/92)
+    - FIX: when encountering an ambiguous timestamp, the JDBC Input no longer crashes
+    - Added support for disambiguating timestamps in daylight saving time (DST) overlap periods
+
 ## 5.3.0
- - Ambiguous Timestamp Support [#92](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/92)
-  - FIX: when encountering an ambiguous timestamp, the JDBC Input no longer crashes
-  - Added support for disambiguating timestamps in daylight saving time (DST) overlap periods
+  - Refactor: start using scheduler mixin [#110](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/110)
+
+## 5.2.6
+  - Fix: change default path of 'last_run_metadata_path' to be rooted in the LS data.path folder and not in $HOME [#106](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/106)
+
+## 5.2.5
+  - Fix: do not execute more queries with debug logging [#109](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/109)
 
 ## 5.2.4
   - Fix: compatibility with all (>= 3.0) rufus-scheduler versions [#97](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/97) 

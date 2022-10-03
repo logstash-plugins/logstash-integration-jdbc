@@ -9,6 +9,7 @@ require "timecop"
 require "stud/temporary"
 require "time"
 require "date"
+require "pathname"
 
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
@@ -51,6 +52,9 @@ describe LogStash::Inputs::Jdbc do
       db.drop_table(:types_table)
       db.drop_table(:test1_table)
     end
+
+    last_run_default_path = LogStash::SETTINGS.get_value("path.data")
+    FileUtils.rm_f("#{last_run_default_path}/plugins/inputs/jdbc/logstash_jdbc_last_run")
   end
 
   context "when registering and tearing down" do
@@ -245,18 +249,6 @@ describe LogStash::Inputs::Jdbc do
       runner.join
       expect(queue.size).to eq(2)
       Timecop.return
-    end
-
-    it "cleans up scheduler resources on close" do
-      runner = Thread.new do
-        plugin.run(queue)
-      end
-      sleep 1
-      plugin.do_close
-
-      scheduler = plugin.instance_variable_get(:@scheduler)
-      expect(scheduler).to_not be_nil
-      expect(scheduler.down?).to be_truthy
     end
 
   end
@@ -1114,6 +1106,86 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when state is persisted" do
+    context "to file" do
+      let(:settings) do
+        {
+          "statement" => "SELECT * FROM test_table",
+          "record_last_run" => true
+        }
+      end
+
+      before do
+        plugin.register
+      end
+
+      after do
+        plugin.stop
+      end
+
+      context "with default last_run_metadata_path" do
+        it "should save state in data.data subpath" do
+          path = LogStash::SETTINGS.get_value("path.data")
+          expect(plugin.last_run_metadata_file_path).to start_with(path)
+        end
+      end
+
+      context "with customized last_run_metadata_path" do
+        let(:settings) { super().merge({ "last_run_metadata_path" => Stud::Temporary.pathname })}
+
+        it "should save state in data.data subpath" do
+          expect(plugin.last_run_metadata_file_path).to start_with(settings["last_run_metadata_path"])
+        end
+      end
+    end
+
+    context "with customized last_run_metadata_path point to directory" do
+      let(:settings) do
+        path = Stud::Temporary.pathname
+        Pathname.new(path).tap {|path| path.mkpath}
+        super().merge({ "last_run_metadata_path" => path})
+      end
+
+      it "raise configuration error" do
+        expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+      end
+    end
+  end
+
+  context "update the previous default last_run_metadata_path" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test_table",
+        "record_last_run" => true
+      }
+    end
+
+    let(:fake_home) do
+       path = Stud::Temporary.pathname
+       Pathname.new(path).tap {|path| path.mkpath}
+       path
+    end
+
+    context "when a file exists" do
+      before do
+        # in a faked HOME folder save a valid previous last_run metadata file
+        allow(ENV).to receive(:[]).with('HOME').and_return(fake_home)
+        File.open("#{ENV['HOME']}/.logstash_jdbc_last_run", 'w') do |file|
+          file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
+        end
+      end
+
+      it "should be moved" do
+        plugin.register
+
+        expect(::File.exist?("#{ENV['HOME']}/.logstash_jdbc_last_run")).to be false
+        path = LogStash::SETTINGS.get_value("path.data")
+        full_path = "#{path}/plugins/inputs/jdbc/logstash_jdbc_last_run"
+        expect(::File.exist?(full_path)).to be true
+      end
+    end
+  end
+
   context "when setting fetch size" do
 
     let(:settings) do
@@ -1432,54 +1504,6 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when debug logging and a count query raises a count related error" do
-    let(:settings) do
-      { "statement" => "SELECT * from types_table" }
-    end
-    let(:logger) { double("logger", :debug? => true) }
-    let(:statement_logger) { LogStash::PluginMixins::Jdbc::CheckedCountLogger.new(logger) }
-    let(:value_tracker) { double("value tracker", :set_value => nil, :write => nil) }
-    let(:msg) { 'Java::JavaSql::SQLSyntaxErrorException: Dynamic SQL Error; SQL error code = -104; Token unknown - line 1, column 105; LIMIT [SQLState:42000, ISC error code:335544634]' }
-    let(:error_args) do
-      {"exception" => msg}
-    end
-
-    before do
-      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
-      plugin.register
-      plugin.set_statement_logger(statement_logger)
-      plugin.set_value_tracker(value_tracker)
-      allow(value_tracker).to receive(:value).and_return("bar")
-      allow(statement_logger).to receive(:execute_count).once.and_raise(StandardError.new(msg))
-    end
-
-    after do
-      plugin.stop
-    end
-
-    context "if the count query raises an error" do
-      it "should log a debug line without a count key as its unknown whether a count works at this stage" do
-        expect(logger).to receive(:warn).once.with("Attempting a count query raised an error, the generated count statement is most likely incorrect but check networking, authentication or your statement syntax", error_args)
-        expect(logger).to receive(:warn).once.with("Ongoing count statement generation is being prevented")
-        expect(logger).to receive(:debug).once.with("Executing JDBC query", :statement => settings["statement"], :parameters => {:sql_last_value=>"bar"})
-        plugin.run(queue)
-        queue.pop
-      end
-
-      it "should create an event normally" do
-        allow(logger).to receive(:warn)
-        allow(logger).to receive(:debug)
-        plugin.run(queue)
-        event = queue.pop
-        expect(event.get("num")).to eq(1)
-        expect(event.get("string")).to eq("A test")
-        expect(event.get("started_at")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T00:00:00.000Z")
-        expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T23:59:59.000Z")
-        expect(event.get("ranking").to_f).to eq(95.67)
-      end
-    end
-  end
-
   context "when retrieving records with ambiguous timestamps" do
 
     let(:settings) do
@@ -1724,7 +1748,7 @@ describe LogStash::Inputs::Jdbc do
       let(:jdbc_driver_class) { "org.apache.NonExistentDriver" }
       it "raises a loading error" do
         expect { plugin.send(:load_driver) }.to raise_error LogStash::PluginLoadingError,
-                                                            /java.lang.ClassNotFoundException: org.apache.NonExistentDriver/
+                                                            /ClassNotFoundException: org.apache.NonExistentDriver/
       end
     end
   end
