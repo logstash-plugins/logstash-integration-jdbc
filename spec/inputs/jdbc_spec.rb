@@ -696,7 +696,7 @@ describe LogStash::Inputs::Jdbc do
         "last_run_metadata_path" => Stud::Temporary.pathname }
     end
 
-    let(:nums) { [BigDecimal.new(10), BigDecimal.new(20), BigDecimal.new(30), BigDecimal.new(40), BigDecimal.new(50)] }
+    let(:nums) { [BigDecimal(10), BigDecimal(20), BigDecimal(30), BigDecimal(40), BigDecimal(50)] }
 
     before do
       plugin.register
