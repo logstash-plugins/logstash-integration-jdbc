@@ -4,6 +4,7 @@ require "logstash/config/mixin"
 require "time"
 require "date"
 require_relative "value_tracking"
+require_relative "timezone_proxy"
 require_relative "statement_handler"
 
 java_import java.util.concurrent.locks.ReentrantLock
@@ -82,7 +83,8 @@ module LogStash  module PluginMixins module Jdbc
       # Using this setting will manually assign a specified timezone offset, instead
       # of using the timezone setting of the local machine.  You must use a canonical
       # timezone, *America/Denver*, for example.
-      config :jdbc_default_timezone, :validate => :string
+      config :jdbc_default_timezone, :validate => :jdbc_timezone_spec
+      extend TimezoneProxy::JDBCTimezoneSpecValidator
 
       # General/Vendor-specific Sequel configuration options.
       #
@@ -157,7 +159,7 @@ module LogStash  module PluginMixins module Jdbc
       @database.extension(:pagination)
       if @jdbc_default_timezone
         @database.extension(:named_timezones)
-        @database.timezone = @jdbc_default_timezone
+        @database.timezone = TimezoneProxy.load(@jdbc_default_timezone)
       end
       if @jdbc_validate_connection
         @database.extension(:connection_validator)
@@ -218,7 +220,10 @@ module LogStash  module PluginMixins module Jdbc
           yield extract_values_from(row)
         end
         success = true
-      rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError, Java::JavaSql::SQLException => e
+      rescue Sequel::DatabaseConnectionError,
+             Sequel::DatabaseError,
+             Sequel::InvalidValue,
+             Java::JavaSql::SQLException => e
         details = { exception: e.class, message: e.message }
         details[:cause] = e.cause.inspect if e.cause
         details[:backtrace] = e.backtrace if @logger.debug?

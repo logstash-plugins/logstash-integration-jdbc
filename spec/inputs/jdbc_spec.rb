@@ -696,7 +696,7 @@ describe LogStash::Inputs::Jdbc do
         "last_run_metadata_path" => Stud::Temporary.pathname }
     end
 
-    let(:nums) { [BigDecimal.new(10), BigDecimal.new(20), BigDecimal.new(30), BigDecimal.new(40), BigDecimal.new(50)] }
+    let(:nums) { [BigDecimal(10), BigDecimal(20), BigDecimal(30), BigDecimal(40), BigDecimal(50)] }
 
     before do
       plugin.register
@@ -1501,6 +1501,49 @@ describe LogStash::Inputs::Jdbc do
       expect(event.get("started_at")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T00:00:00.000Z")
       expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T23:59:59.000Z")
       expect(event.get("ranking").to_f).to eq(95.67)
+    end
+  end
+
+  context "when retrieving records with ambiguous timestamps" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from types_table",
+        "jdbc_default_timezone" => jdbc_default_timezone
+      }
+    end
+
+    before(:each) do
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '2021-11-07 01:23:45', 95.67)"
+      plugin.register
+    end
+
+    context "when initialized with a preference for DST being enabled" do
+      let(:jdbc_default_timezone) { 'America/Chicago[dst_enabled_on_overlap:true]' }
+
+      it 'treats the timestamp column as if DST was enabled' do
+        plugin.run(queue)
+        event = queue.pop
+        expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("2021-11-07T06:23:45Z")
+      end
+    end
+    context "when initialized with a preference for DST being disabled" do
+      let(:jdbc_default_timezone) { 'America/Chicago[dst_enabled_on_overlap:false]' }
+
+      it 'treats the timestamp column as if DST was disabled' do
+        plugin.run(queue)
+        event = queue.pop
+        expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("2021-11-07T07:23:45Z")
+      end
+    end
+    context "when initialized without a preference for DST being enabled or disabled" do
+      before(:each) { allow(plugin.logger).to receive(:warn) }
+      let(:jdbc_default_timezone) { 'America/Chicago' }
+
+      it 'the error results in helpful log warning' do
+        plugin.run(queue)
+        expect(plugin.logger).to have_received(:warn).with(a_string_including("Exception when executing JDBC query"), a_hash_including(:message => a_string_including("2021-11-07 01:23:45 is an ambiguous local time")))
+      end
     end
   end
 

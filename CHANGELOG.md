@@ -1,3 +1,8 @@
+## 5.4.0
+  - Ambiguous Timestamp Support [#92](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/92)
+    - FIX: when encountering an ambiguous timestamp, the JDBC Input no longer crashes
+    - Added support for disambiguating timestamps in daylight saving time (DST) overlap periods
+
 ## 5.3.0
   - Refactor: start using scheduler mixin [#110](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/110)
 
