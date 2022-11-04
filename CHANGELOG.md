@@ -1,3 +1,6 @@
+## 5.4.1
+  - Bugfix leak which happened in creating a new Database pool for every query. The pool is now crated on registration and closed on plugin's `stop` [#119](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/119)
+ 
 ## 5.4.0
   - Ambiguous Timestamp Support [#92](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/92)
     - FIX: when encountering an ambiguous timestamp, the JDBC Input no longer crashes
