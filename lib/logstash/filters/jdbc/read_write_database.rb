@@ -70,7 +70,7 @@ module LogStash module Filters module Jdbc
         return if records_size.zero?
         logger.info("loader #{loader.id}, fetched #{records_size} records in: #{(Time.now.to_f - start).round(3)} seconds")
         start = Time.now.to_f
-        import_file = ::File.join(loader.staging_directory, loader.table.to_s)
+        import_file = ::File.join(loader.staging_directory, "#{loader.table.to_s}_#{SecureRandom.hex(8)}")
         ::File.open(import_file, "w") do |fd|
           dataset = @db[loader.table]
           records.each do |hash|
