@@ -131,6 +131,13 @@ filter {
     jdbc_connection_string => "jdbc:postgresql://remotedb:5432/ls_test_2"
   }
 }
+
+output {
+  if "_jdbcstaticdefaultsused" in [tags] {
+    # Print all the not found users
+    stdout { }
+  }
+}
 -----
 <1> Queries an external database to fetch the dataset that will be cached
 locally.
