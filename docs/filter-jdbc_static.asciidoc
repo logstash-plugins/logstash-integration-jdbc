@@ -111,10 +111,14 @@ filter {
         query => "SELECT firstname, lastname FROM users WHERE userid = ? AND country = ?"
         prepared_parameters => ["[loggedin_userid]", "[user_nation]"] <4>
         target => "user" <5>
+        default_hash => { <6>
+          firstname => nil
+          lastname => nil
+        }
       }
     ]
     # using add_field here to add & rename values to the event root
-    add_field => { server_name => "%{[server][0][description]}" } <6>
+    add_field => { server_name => "%{[server][0][description]}" } <7>
     add_field => { user_firstname => "%{[user][0][firstname]}" }
     add_field => { user_lastname => "%{[user][0][lastname]}" }
     remove_field => ["server", "user"]
@@ -139,7 +143,9 @@ See <<plugins-{type}s-{plugin}-object_order>>.
 follow the positional ordering.
 <5> Specifies the event field that will store the looked-up data. If the lookup
 returns multiple columns, the data is stored as a JSON object within the field.
-<6> Takes data from the JSON object and stores it in top-level event fields for
+<6> Creates a default user if the user can not be found in the users database. 
+In which case the <<plugins-{type}s-{plugin}-tag_on_default_use>> will be called.
+<7> Takes data from the JSON object and stores it in top-level event fields for
 easier analysis in Kibana.
 
 Here's a full example:
