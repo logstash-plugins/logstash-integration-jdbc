@@ -150,8 +150,7 @@ See <<plugins-{type}s-{plugin}-object_order>>.
 follow the positional ordering.
 <5> Specifies the event field that will store the looked-up data. If the lookup
 returns multiple columns, the data is stored as a JSON object within the field.
-<6> Uses values for user fields if the user can not be found in the users database. 
-In which case the <<plugins-{type}s-{plugin}-tag_on_default_use>> tags list is used to mark the event.
+<6> When the user is not found in the database, an event is created using data from the <<plugins-{type}s-{plugin}-local_lookups>> `default hash` setting, and the event is tagged with the list set in <<plugins-{type}s-{plugin}-tag_on_default_use>>.
 <7> Takes data from the JSON object and stores it in top-level event fields for
 easier analysis in Kibana.
 
