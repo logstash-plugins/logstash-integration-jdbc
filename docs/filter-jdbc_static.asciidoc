@@ -111,10 +111,14 @@ filter {
         query => "SELECT firstname, lastname FROM users WHERE userid = ? AND country = ?"
         prepared_parameters => ["[loggedin_userid]", "[user_nation]"] <4>
         target => "user" <5>
+        default_hash => { <6>
+          firstname => nil
+          lastname => nil
+        }
       }
     ]
     # using add_field here to add & rename values to the event root
-    add_field => { server_name => "%{[server][0][description]}" } <6>
+    add_field => { server_name => "%{[server][0][description]}" } <7>
     add_field => { user_firstname => "%{[user][0][firstname]}" }
     add_field => { user_lastname => "%{[user][0][lastname]}" }
     remove_field => ["server", "user"]
@@ -125,6 +129,13 @@ filter {
     jdbc_driver_class => "org.postgresql.Driver"
     jdbc_driver_library => "/tmp/logstash/vendor/postgresql-42.1.4.jar"
     jdbc_connection_string => "jdbc:postgresql://remotedb:5432/ls_test_2"
+  }
+}
+
+output {
+  if "_jdbcstaticdefaultsused" in [tags] {
+    # Print all the not found users
+    stdout { }
   }
 }
 -----
@@ -139,7 +150,8 @@ See <<plugins-{type}s-{plugin}-object_order>>.
 follow the positional ordering.
 <5> Specifies the event field that will store the looked-up data. If the lookup
 returns multiple columns, the data is stored as a JSON object within the field.
-<6> Takes data from the JSON object and stores it in top-level event fields for
+<6> When the user is not found in the database, an event is created using data from the <<plugins-{type}s-{plugin}-local_lookups>> `default hash` setting, and the event is tagged with the list set in <<plugins-{type}s-{plugin}-tag_on_default_use>>.
+<7> Takes data from the JSON object and stores it in top-level event fields for
 easier analysis in Kibana.
 
 Here's a full example:
