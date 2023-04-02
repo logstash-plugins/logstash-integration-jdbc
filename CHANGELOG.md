@@ -1,5 +1,6 @@
-## Unreleased
+## 5.4.2
   - Doc: described default_hash and tag_on_default_use interaction filter plugin [#122](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/122)
+  - Added retry for sql statement execution failure
 
 ## 5.4.1
   - Bugfix leak which happened in creating a new Database pool for every query. The pool is now crated on registration and closed on plugin's `stop` [#119](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/119)

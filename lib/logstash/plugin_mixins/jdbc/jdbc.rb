@@ -202,25 +202,37 @@ module LogStash  module PluginMixins module Jdbc
     public
     def execute_statement
       success = false
-      begin
-        sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
-        @tracking_column_warning_sent = false
-        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
-          sql_last_value = get_column_value(row) if @use_column_value
-          yield extract_values_from(row)
+      retry_attempts = @connection_retry_attempts
+      while retry_attempts > 0 do
+        retry_attempts -= 1
+        begin
+          sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
+          @tracking_column_warning_sent = false
+          @statement_handler.perform_query(@database, @value_tracker.value) do |row|
+            sql_last_value = get_column_value(row) if @use_column_value
+            yield extract_values_from(row)
+          end
+          success = true
+        rescue Sequel::DatabaseConnectionError,
+          Sequel::DatabaseError,
+          Sequel::InvalidValue,
+          Java::JavaSql::SQLException => e
+          details = { exception: e.class, message: e.message }
+          details[:cause] = e.cause.inspect if e.cause
+          details[:backtrace] = e.backtrace if @logger.debug?
+          @logger.warn("Exception when executing JDBC query", details)
+
+          if retry_attempts == 0
+            @logger.error("Unable to execute statement. Tried #{@connection_retry_attempts} times.")
+          else
+            @logger.error("Unable to execute statement. Trying again.")
+            sleep(@connection_retry_attempts_wait_time)
+          end
+        else
+          @value_tracker.set_value(sql_last_value)
         end
-        success = true
-      rescue Sequel::DatabaseConnectionError,
-             Sequel::DatabaseError,
-             Sequel::InvalidValue,
-             Java::JavaSql::SQLException => e
-        details = { exception: e.class, message: e.message }
-        details[:cause] = e.cause.inspect if e.cause
-        details[:backtrace] = e.backtrace if @logger.debug?
-        @logger.warn("Exception when executing JDBC query", details)
-      else
-        @value_tracker.set_value(sql_last_value)
       end
+
       return success
     end
 
