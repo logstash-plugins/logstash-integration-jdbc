@@ -1359,7 +1359,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.register
 
       handler = plugin.instance_variable_get(:@statement_handler)
-      allow(handler).to receive(:perform_query).with(instance_of(Sequel::JDBC::Database), instance_of(Time)).and_raise(Sequel::DatabaseConnectionError)
+      allow(handler).to receive(:perform_query).with(instance_of(Sequel::JDBC::Database), instance_of(Time)).and_raise(Sequel::PoolTimeout)
       expect(plugin.logger).to receive(:error).with("Unable to execute statement. Trying again.")
       expect(plugin.logger).to receive(:error).with("Unable to execute statement. Tried 2 times.")
 

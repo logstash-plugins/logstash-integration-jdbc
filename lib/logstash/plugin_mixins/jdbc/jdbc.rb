@@ -213,10 +213,7 @@ module LogStash  module PluginMixins module Jdbc
             yield extract_values_from(row)
           end
           success = true
-        rescue Sequel::DatabaseConnectionError,
-          Sequel::DatabaseError,
-          Sequel::InvalidValue,
-          Java::JavaSql::SQLException => e
+        rescue Sequel::Error, Java::JavaSql::SQLException => e
           details = { exception: e.class, message: e.message }
           details[:cause] = e.cause.inspect if e.cause
           details[:backtrace] = e.backtrace if @logger.debug?
