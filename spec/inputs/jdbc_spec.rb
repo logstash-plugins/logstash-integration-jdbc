@@ -1353,7 +1353,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
-    it "should retry when query execution fails" do
+    it "does retry when query execution fails" do
       mixin_settings['connection_retry_attempts'] = 2
       queue = Queue.new
       plugin.register
@@ -1362,6 +1362,19 @@ describe LogStash::Inputs::Jdbc do
       allow(handler).to receive(:perform_query).with(instance_of(Sequel::JDBC::Database), instance_of(Time)).and_raise(Sequel::PoolTimeout)
       expect(plugin.logger).to receive(:error).with("Unable to execute statement. Trying again.")
       expect(plugin.logger).to receive(:error).with("Unable to execute statement. Tried 2 times.")
+
+      plugin.run(queue)
+      plugin.stop
+    end
+
+    it "does not retry when query execution succeeds" do
+      mixin_settings['connection_retry_attempts'] = 2
+      queue = Queue.new
+      plugin.register
+
+      handler = plugin.instance_variable_get(:@statement_handler)
+      allow(handler).to receive(:perform_query).with(instance_of(Sequel::JDBC::Database), instance_of(Time)).and_call_original
+      expect(plugin.logger).not_to receive(:error)
 
       plugin.run(queue)
       plugin.stop
