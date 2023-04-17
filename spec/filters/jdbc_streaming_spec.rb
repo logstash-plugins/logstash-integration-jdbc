@@ -259,7 +259,7 @@ module LogStash module Filters
       CONFIG
       end
 
-      sample("message" => "some text") do
+      sample({"message" => "some text"}) do
         expect(subject.get('new_field')).to eq([{"1" => 'from_database'}])
       end
     end
@@ -277,7 +277,7 @@ module LogStash module Filters
       CONFIG
       end
 
-      sample("message" => "some text") do
+      sample({"message" => "some text"}) do
         expect(subject.get('new_field')).to eq([{"col_1" => 'from_database'}])
       end
     end
@@ -296,11 +296,11 @@ module LogStash module Filters
       CONFIG
       end
 
-      sample("message" => "some text", "param_field" => "1") do
+      sample({"message" => "some text", "param_field" => "1"}) do
         expect(subject.get('new_field')).to eq([{"1" => 'from_database'}])
       end
 
-      sample("message" => "some text", "param_field" => "2") do
+      sample({"message" => "some text", "param_field" => "2"}) do
         expect(subject.get('new_field').nil?)
       end
     end
@@ -319,11 +319,11 @@ module LogStash module Filters
       CONFIG
       end
 
-      sample("message" => "some text", "param_field" => 1) do
+      sample({"message" => "some text", "param_field" => 1}) do
         expect(subject.get('new_field')).to eq([{"1" => 'from_database'}])
       end
 
-      sample("message" => "some text", "param_field" => "1") do
+      sample({"message" => "some text", "param_field" => "1"}) do
         expect(subject.get('new_field').nil?)
       end
     end
@@ -342,7 +342,7 @@ module LogStash module Filters
       CONFIG
       end
 
-      sample("message" => "some text") do
+      sample({"message" => "some text"}) do
         expect(subject.get('new_field')).to eq([{"1" => 'from_database'}])
       end
     end
