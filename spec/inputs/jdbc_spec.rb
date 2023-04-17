@@ -1169,7 +1169,7 @@ describe LogStash::Inputs::Jdbc do
     context "when a file exists" do
       before do
         # in a faked HOME folder save a valid previous last_run metadata file
-        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with(anything).and_call_original
         allow(ENV).to receive(:[]).with('HOME').and_return(fake_home)
 
         File.open("#{fake_home}/.logstash_jdbc_last_run", 'w') do |file|
