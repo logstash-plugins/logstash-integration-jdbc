@@ -112,7 +112,7 @@ module LogStash module PluginMixins module Jdbc
 
     def read
       return unless @exists
-      YAML.load(::File.read(@path))
+      YAML.load(::File.read(@path), permitted_classes: [DateTime, Time, BigDecimal])
     end
 
     def write(value)

@@ -277,7 +277,7 @@ describe LogStash::Inputs::Jdbc do
       sleep 1
       for i in 0..1
         sleep 1
-        updated_last_run = YAML.load(File.read(settings["last_run_metadata_path"]))
+        updated_last_run = YAML.load(File.read(settings["last_run_metadata_path"]), permitted_classes: [Time])
         expect(updated_last_run).to be > last_run_time
         last_run_time = updated_last_run
       end
@@ -547,7 +547,7 @@ describe LogStash::Inputs::Jdbc do
         expect(actual).to eq(expected)
         plugin.stop
         raw_last_run_value = File.read(settings["last_run_metadata_path"])
-        last_run_value = YAML.load(raw_last_run_value)
+        last_run_value = YAML.load(raw_last_run_value, permitted_classes: [DateTime, Time])
         expect(last_run_value).to be_a(DateTime)
         expect(last_run_value.strftime("%F %T.%N %Z")).to eq("2015-01-02 02:00:00.722000000 +00:00")
 
@@ -562,7 +562,7 @@ describe LogStash::Inputs::Jdbc do
         plugin.stop
         expect(event.get("num")).to eq(12)
         expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-02T03:00:00.811Z"))
-        last_run_value = YAML.load(File.read(settings["last_run_metadata_path"]))
+        last_run_value = YAML.load(File.read(settings["last_run_metadata_path"]), permitted_classes: [DateTime, Time])
         expect(last_run_value).to be_a(DateTime)
         # verify that sub-seconds are recorded to the file
         expect(last_run_value.strftime("%F %T.%N %Z")).to eq("2015-01-02 03:00:00.811000000 +00:00")
