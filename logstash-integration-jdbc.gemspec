@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'sequel'
   s.add_runtime_dependency 'lru_redux' # lru cache with ttl
-  s.add_runtime_dependency 'psych', '~> 4'
+  s.add_runtime_dependency 'psych', '~> 4' # required to run on Logstash 7.x and [8.0..8.4)
 
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
