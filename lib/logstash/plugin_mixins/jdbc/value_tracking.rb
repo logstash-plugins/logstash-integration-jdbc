@@ -31,6 +31,17 @@ module LogStash module PluginMixins module Jdbc
       set_initial
     end
 
+    if Psych::VERSION&.split('.')&.first.to_i >= 4
+      YAML_PERMITTED_CLASSES = [DateTime, Time, BigDecimal].freeze
+      def self.load_yaml(source)
+        Psych::safe_load(source, permitted_classes: YAML_PERMITTED_CLASSES)
+      end
+    else
+      def self.load_yaml(source)
+        YAML::load(source)
+      end
+    end
+
     def set_initial
       # override in subclass
     end
@@ -112,7 +123,7 @@ module LogStash module PluginMixins module Jdbc
 
     def read
       return unless @exists
-      YAML.unsafe_load(::File.read(@path))
+      ValueTracking.load_yaml(::File.read(@path))
     end
 
     def write(value)
