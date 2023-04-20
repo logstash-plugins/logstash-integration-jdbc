@@ -1,3 +1,6 @@
+## 5.4.4
+  - Fix: adaptations for JRuby 9.4 [#125](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/125)
+
 ## 5.4.3
   - Fix crash when metadata file can't be deleted after moving under path.data [#136](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/136)
 
