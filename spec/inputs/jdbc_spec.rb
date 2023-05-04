@@ -1354,7 +1354,8 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "does retry when query execution fails" do
-      mixin_settings['connection_retry_attempts'] = 2
+      mixin_settings['statement_retry_attempts'] = 2
+      mixin_settings['statement_retry_attempts_wait_time'] = 0.5
       queue = Queue.new
       plugin.register
 

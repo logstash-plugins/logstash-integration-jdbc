@@ -104,6 +104,11 @@ module LogStash  module PluginMixins module Jdbc
       # Number of seconds to sleep between connection attempts
       config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
 
+      # Maximum number of times to try running statement
+      config :statement_retry_attempts, :validate => :number, :default => 1
+      # Number of seconds to sleep between statement execution
+      config :statement_retry_attempts_wait_time, :validate => :number, :default => 0.5
+
       # give users the ability to force Sequel application side into using local timezone
       config :plugin_timezone, :validate => ["local", "utc"], :default => "utc"
     end
@@ -202,7 +207,7 @@ module LogStash  module PluginMixins module Jdbc
     public
     def execute_statement
       success = false
-      retry_attempts = @connection_retry_attempts
+      retry_attempts = @statement_retry_attempts
 
       begin
         retry_attempts -= 1
@@ -220,10 +225,10 @@ module LogStash  module PluginMixins module Jdbc
         @logger.warn("Exception when executing JDBC query", details)
 
         if retry_attempts == 0
-          @logger.error("Unable to execute statement. Tried #{@connection_retry_attempts} times.")
+          @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
         else
           @logger.error("Unable to execute statement. Trying again.")
-          sleep(@connection_retry_attempts_wait_time)
+          sleep(@statement_retry_attempts_wait_time)
           retry
         end
       else
