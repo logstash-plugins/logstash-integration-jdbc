@@ -104,6 +104,11 @@ module LogStash  module PluginMixins module Jdbc
       # Number of seconds to sleep between connection attempts
       config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
 
+      # Maximum number of times to try running statement
+      config :statement_retry_attempts, :validate => :number, :default => 1
+      # Number of seconds to sleep between statement execution
+      config :statement_retry_attempts_wait_time, :validate => :number, :default => 0.5
+
       # give users the ability to force Sequel application side into using local timezone
       config :plugin_timezone, :validate => ["local", "utc"], :default => "utc"
     end
@@ -202,7 +207,10 @@ module LogStash  module PluginMixins module Jdbc
     public
     def execute_statement
       success = false
+      retry_attempts = @statement_retry_attempts
+
       begin
+        retry_attempts -= 1
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @statement_handler.perform_query(@database, @value_tracker.value) do |row|
@@ -210,17 +218,23 @@ module LogStash  module PluginMixins module Jdbc
           yield extract_values_from(row)
         end
         success = true
-      rescue Sequel::DatabaseConnectionError,
-             Sequel::DatabaseError,
-             Sequel::InvalidValue,
-             Java::JavaSql::SQLException => e
+      rescue Sequel::Error, Java::JavaSql::SQLException => e
         details = { exception: e.class, message: e.message }
         details[:cause] = e.cause.inspect if e.cause
         details[:backtrace] = e.backtrace if @logger.debug?
         @logger.warn("Exception when executing JDBC query", details)
+
+        if retry_attempts == 0
+          @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
+        else
+          @logger.error("Unable to execute statement. Trying again.")
+          sleep(@statement_retry_attempts_wait_time)
+          retry
+        end
       else
         @value_tracker.set_value(sql_last_value)
       end
+
       return success
     end
 
