@@ -1,3 +1,6 @@
+## 5.4.3
+  - FIX: the input plugin's prior behaviour of opening a new database pool for each query (removed in `v5.4.1`) is restored, ensuring that infrequently-run schedules do not hold open connections to their databases indefinitely.
+
 ## 5.4.2
   - Doc: described default_hash and tag_on_default_use interaction filter plugin [#122](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/122)
   - Added new settings `statement_retry_attempts` and `statement_retry_attempts_wait_time` for retry of failed sql statement execution [#123](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/123)

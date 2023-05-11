@@ -261,6 +261,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       end
     end
 
+    prepare_jdbc_connection
+
     if @use_column_value
       # Raise an error if @use_column_value is true, but no @tracking_column is set
       if @tracking_column.nil?
@@ -283,7 +285,6 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     end
 
     set_value_tracker LogStash::PluginMixins::Jdbc::ValueTracking.build_last_value_tracker(self)
-    set_statement_handler LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self)
 
     @enable_encoding = !@charset.nil? || !@columns_charset.empty?
 
@@ -303,25 +304,10 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
-
-    load_driver
-    begin
-      open_jdbc_connection
-    rescue Sequel::DatabaseConnectionError,
-           Sequel::DatabaseError,
-           Sequel::InvalidValue,
-           Java::JavaSql::SQLException => e
-      details = { exception: e.class, message: e.message }
-      details[:cause] = e.cause.inspect if e.cause
-      details[:backtrace] = e.backtrace if @logger.debug?
-      @logger.warn("Exception when executing JDBC query", details)
-      raise(LogStash::ConfigurationError, "Can't create a connection pool to the database")
-    end
   end # def register
 
-  # test injection points
-  def set_statement_handler(handler)
-    @statement_handler = handler
+  def new_statement_handler
+    LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self)
   end
 
   def set_value_tracker(instance)
@@ -329,6 +315,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   def run(queue)
+    load_driver
     if @schedule
       # scheduler input thread name example: "[my-oracle]|input|jdbc|scheduler"
       scheduler.cron(@schedule) { execute_query(queue) }
