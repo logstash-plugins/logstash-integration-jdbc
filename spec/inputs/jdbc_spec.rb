@@ -1593,12 +1593,16 @@ describe LogStash::Inputs::Jdbc do
       { "statement" => "SELECT * from types_table", "jdbc_driver_library" => invalid_driver_jar_path }
     end
 
+    before do
+      plugin.register
+    end
+
     after do
       plugin.stop
     end
 
     it "raise a loading error" do
-      expect { plugin.register }.
+      expect { plugin.run(queue) }.
           to raise_error(LogStash::PluginLoadingError, /unable to load .*? from :jdbc_driver_library, file not readable/)
     end
   end
