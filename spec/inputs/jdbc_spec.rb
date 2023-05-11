@@ -1283,6 +1283,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.register
       plugin.run(queue)
       db = plugin.instance_variable_get(:@database)
+      expect(db.pool).to be_a_kind_of(::Sequel::ThreadedConnectionPool) # pries into internal details
       expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
       expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
 

@@ -12,6 +12,9 @@ java_import java.util.concurrent.locks.ReentrantLock
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
+#
+# CAUTION: implementation of this "potential reuse" module is
+#          VERY tightly-coupled with the JDBC Input's implementation.
 module LogStash  module PluginMixins module Jdbc
   module Jdbc
     include LogStash::PluginMixins::Jdbc::ValueHandler

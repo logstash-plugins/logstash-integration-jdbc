@@ -124,14 +124,14 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class PreparedStatementHandler < StatementHandler
-    attr_reader :name, :bind_values_array, :statement_prepared, :prepared, :parameters
+    attr_reader :name
 
     def initialize(plugin)
       super(plugin)
       @name = plugin.prepared_statement_name.to_sym
-      @bind_values_array = plugin.prepared_statement_bind_values
-      @parameters = plugin.parameters
-      @statement_prepared = Concurrent::AtomicBoolean.new(false)
+
+      @positional_bind_mapping =  create_positional_bind_mapping(plugin.prepared_statement_bind_values).freeze
+      @positional_bind_placeholders = @positional_bind_mapping.keys.map { |v| :"$#{v}" }.freeze
     end
 
     # Performs the query, ignoring our pagination settings, yielding once per row of data
@@ -148,41 +148,28 @@ module LogStash module PluginMixins module Jdbc
     private
 
     def build_query(db, sql_last_value)
-      @parameters = create_bind_values_hash
-      if statement_prepared.false?
-        prepended = parameters.keys.map{|v| v.to_s.prepend("$").to_sym}
-        @prepared = db[statement, *prepended].prepare(:select, name)
-        statement_prepared.make_true
-      end
       # under the scheduler the Sequel database instance is recreated each time
       # so the previous prepared statements are lost, add back
-      if db.prepared_statement(name).nil?
-        db.set_prepared_statement(name, prepared)
-      end
-      bind_value_sql_last_value(sql_last_value)
-      begin
-        db.call(name, parameters)
-      rescue => e
-        # clear the statement prepared flag - the statement may be closed by this
-        # time.
-        statement_prepared.make_false
-        raise e
-      end
+      prepared = db.prepared_statement(name)
+      prepared ||= db[statement, *positional_bind_placeholders].prepare(:select, name)
+
+      prepared.call(positional_bind_mapping(sql_last_value))
     end
 
-    def create_bind_values_hash
+    def create_positional_bind_mapping(bind_values_array)
       hash = {}
       bind_values_array.each_with_index {|v,i| hash[:"p#{i}"] = v}
       hash
     end
 
-    def bind_value_sql_last_value(sql_last_value)
-      parameters.keys.each do |key|
-        value = parameters[key]
-        if value == ":sql_last_value"
-          parameters[key] = sql_last_value
-        end
+    def positional_bind_mapping(sql_last_value)
+      @positional_bind_mapping.transform_values do |value|
+        value == ":sql_last_value" ? sql_last_value : value
       end
+    end
+
+    def positional_bind_placeholders
+      @positional_bind_mapping.keys.map { |v| :"$#{v}" }.freeze
     end
   end
 end end end
