@@ -1296,11 +1296,12 @@ describe LogStash::Inputs::Jdbc do
 
     it "should log error message" do
       allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 1 times.")
-      expect do
-        plugin.register
-        plugin.run(queue)
-      end.to raise_error(Sequel::PoolTimeout)
+      allow(plugin.logger).to receive(:error)
+
+      plugin.register
+      plugin.run(queue)
+
+      expect(plugin.logger).to have_received(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 1 times.")
     end
   end
 
@@ -1376,12 +1377,13 @@ describe LogStash::Inputs::Jdbc do
       mixin_settings['connection_retry_attempts'] = 2
       mixin_settings['jdbc_pool_timeout'] = 0
       allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
-      expect do
-        plugin.register
-        plugin.run(queue)
-      end.to raise_error(Sequel::PoolTimeout)
+      allow(plugin.logger).to receive(:error)
+
+      plugin.register
+      plugin.run(queue)
+
+      expect(plugin.logger).to have_received(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
+      expect(plugin.logger).to have_received(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
     end
 
     it "should not fail when passed a non-positive value" do
@@ -1642,6 +1644,10 @@ describe LogStash::Inputs::Jdbc do
       { "statement" => "SELECT * from types_table", "jdbc_driver_library" => invalid_driver_jar_path }
     end
 
+    before do
+      plugin.register
+    end
+
     after do
       plugin.stop
     end
@@ -1650,8 +1656,10 @@ describe LogStash::Inputs::Jdbc do
       expect(File.exists?(invalid_driver_jar_path)).to be true
       expect(FileTest.readable?(invalid_driver_jar_path)).to be false
 
-      expect { plugin.register }.
-          to raise_error(LogStash::PluginLoadingError, /unable to load .*? from :jdbc_driver_library, file not readable/)
+      plugin.register
+
+      expect { plugin.run(queue) }
+        .to raise_error(LogStash::PluginLoadingError, /unable to load .*? from :jdbc_driver_library, file not readable/)
     end
   end
 

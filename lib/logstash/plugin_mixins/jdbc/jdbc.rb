@@ -196,13 +196,21 @@ module LogStash  module PluginMixins module Jdbc
     end
 
     public
+    def prepare_jdbc_connection
+      @connection_lock = ReentrantLock.new
+    end
+
+    public
     def close_jdbc_connection
       begin
         # pipeline restarts can also close the jdbc connection, block until the current executing statement is finished to avoid leaking connections
         # connections in use won't really get closed
+        @connection_lock.lock
         @database.disconnect if @database
       rescue => e
         @logger.warn("Failed to close connection", :exception => e)
+      ensure
+        @connection_lock.unlock
       end
     end
 
@@ -213,6 +221,8 @@ module LogStash  module PluginMixins module Jdbc
 
       begin
         retry_attempts -= 1
+        @connection_lock.lock
+        open_jdbc_connection
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @statement_handler.perform_query(@database, @value_tracker.value) do |row|
@@ -235,6 +245,9 @@ module LogStash  module PluginMixins module Jdbc
         end
       else
         @value_tracker.set_value(sql_last_value)
+      ensure
+        close_jdbc_connection
+        @connection_lock.unlock
       end
 
       return success
