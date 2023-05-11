@@ -11,6 +11,9 @@ java_import java.util.concurrent.locks.ReentrantLock
 
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
+#
+# CAUTION: implementation of this "potential reuse" module is
+#          VERY tightly-coupled with the JDBC Input's implementation.
 module LogStash  module PluginMixins module Jdbc
   module Jdbc
     # This method is called when someone includes this module
@@ -115,7 +118,7 @@ module LogStash  module PluginMixins module Jdbc
 
     private
     def jdbc_connect
-      sequel_opts = complete_sequel_opts(:pool_timeout => @jdbc_pool_timeout, :keep_reference => false)
+      sequel_opts = complete_sequel_opts(pool_timeout: @jdbc_pool_timeout, keep_reference: false, single_threaded: true)
       retry_attempts = @connection_retry_attempts
       loop do
         retry_attempts -= 1
@@ -191,6 +194,8 @@ module LogStash  module PluginMixins module Jdbc
       else
         @database.identifier_output_method = :to_s
       end
+
+      @statement_handler = new_statement_handler
     end
 
     public
@@ -204,7 +209,8 @@ module LogStash  module PluginMixins module Jdbc
         # pipeline restarts can also close the jdbc connection, block until the current executing statement is finished to avoid leaking connections
         # connections in use won't really get closed
         @connection_lock.lock
-        @database.disconnect if @database
+        @database&.disconnect
+        @statement_handler = nil
       rescue => e
         @logger.warn("Failed to close connection", :exception => e)
       ensure
