@@ -406,7 +406,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         # the correct access rights
         ::File.delete(old_default_path.to_path)
         @logger.info("Successfully moved the #{old_default_path.to_path} into #{metadata_new_path.to_path}")
-      rescue e
+      rescue => e
         @logger.warn("Using new metadata file at #{metadata_new_path.to_path} but #{old_default_path} can't be removed.")
       end
     end
