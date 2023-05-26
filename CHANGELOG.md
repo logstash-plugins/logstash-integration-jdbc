@@ -1,3 +1,6 @@
+## 5.4.3
+  - fix tests related to metadata file moving [#136](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/136)
+
 ## 5.4.2
   - Doc: described default_hash and tag_on_default_use interaction filter plugin [#122](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/122)
   - Added new settings `statement_retry_attempts` and `statement_retry_attempts_wait_time` for retry of failed sql statement execution [#123](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/123)
