@@ -1169,19 +1169,31 @@ describe LogStash::Inputs::Jdbc do
     context "when a file exists" do
       before do
         # in a faked HOME folder save a valid previous last_run metadata file
+        allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with('HOME').and_return(fake_home)
-        File.open("#{ENV['HOME']}/.logstash_jdbc_last_run", 'w') do |file|
+
+        File.open("#{fake_home}/.logstash_jdbc_last_run", 'w') do |file|
           file.write("--- !ruby/object:DateTime '2022-03-08 08:10:00.486889000 Z'")
         end
       end
+      let(:old_path) { "#{fake_home}/.logstash_jdbc_last_run" }
+      let(:path_data) { LogStash::SETTINGS.get_value("path.data") }
+      let(:new_path) { "#{path_data}/plugins/inputs/jdbc/logstash_jdbc_last_run" }
 
       it "should be moved" do
         plugin.register
-
-        expect(::File.exist?("#{ENV['HOME']}/.logstash_jdbc_last_run")).to be false
-        path = LogStash::SETTINGS.get_value("path.data")
-        full_path = "#{path}/plugins/inputs/jdbc/logstash_jdbc_last_run"
-        expect(::File.exist?(full_path)).to be true
+        expect(::File).to_not exist(old_path)
+        expect(::File).to exist(new_path)
+      end
+      context "if the delete fails" do
+        before(:each) do
+          allow(File).to receive(:delete).and_raise ArgumentError
+        end
+        it "should be still be moved" do
+          plugin.register
+          expect(::File).to exist(old_path) # old still exists
+          expect(::File).to exist(new_path)
+        end
       end
     end
   end
