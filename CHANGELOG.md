@@ -1,5 +1,5 @@
 ## 5.4.3
-  - fix tests related to metadata file moving [#136](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/136)
+  - Fix crash when metadata file can't be deleted after moving under path.data [#136](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/136)
 
 ## 5.4.2
   - Doc: described default_hash and tag_on_default_use interaction filter plugin [#122](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/122)
