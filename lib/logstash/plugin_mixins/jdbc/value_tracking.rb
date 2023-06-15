@@ -1,5 +1,7 @@
 # encoding: utf-8
 require "yaml" # persistence
+require "date"
+require "bigdecimal"
 
 module LogStash module PluginMixins module Jdbc
   class ValueTracking
@@ -32,7 +34,7 @@ module LogStash module PluginMixins module Jdbc
     end
 
     if Psych::VERSION&.split('.')&.first.to_i >= 4
-      YAML_PERMITTED_CLASSES = [DateTime, Time, BigDecimal].freeze
+      YAML_PERMITTED_CLASSES = [::DateTime, ::Time, ::BigDecimal].freeze
       def self.load_yaml(source)
         Psych::safe_load(source, permitted_classes: YAML_PERMITTED_CLASSES)
       end
