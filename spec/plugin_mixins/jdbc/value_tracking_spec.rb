@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/plugin_mixins/jdbc/value_tracking"
+require "tempfile"
 
 module LogStash module PluginMixins module Jdbc
   describe ValueTracking do
@@ -41,6 +42,72 @@ module LogStash module PluginMixins module Jdbc
           expect(parsed_bigdecimal.to_i).to eq 1
         end
       end
+    end
+
+    context "#build_last_value_tracker" do
+
+      let(:plugin) { double("fake plugin") }
+      let(:temp_file) { Tempfile.new('last_run_tracker') }
+
+      before(:each) do
+        allow(plugin).to receive(:record_last_run).and_return(true)
+        allow(plugin).to receive(:clean_run).and_return(false)
+        allow(plugin).to receive(:last_run_metadata_file_path).and_return(temp_file.path)
+      end
+
+      context "create numerical tracker" do
+        before(:each) do
+          allow(plugin).to receive(:use_column_value).and_return(true)
+          allow(plugin).to receive(:tracking_column_type).and_return("numeric")
+        end
+
+        it "should write correctly" do
+          tracker = ValueTracking.build_last_value_tracker(plugin)
+          tracker.set_value(1)
+          tracker.write
+
+          temp_file.rewind
+          v = ValueTracking.load_yaml(::File.read(temp_file.path))
+          expect(v).to eq 1
+        end
+      end
+
+      context "create date time tracker" do
+        before(:each) do
+          allow(plugin).to receive(:use_column_value).and_return(false)
+          allow(plugin).to receive(:jdbc_default_timezone).and_return(:something_not_nil)
+        end
+
+        it "should write correctly" do
+          tracker = ValueTracking.build_last_value_tracker(plugin)
+          tracker.set_value("2023-06-15T15:28:15+02:00")
+          tracker.write
+
+          temp_file.rewind
+          v = ValueTracking.load_yaml(::File.read(temp_file.path))
+          expect(v.class).to eq DateTime
+          expect(v.year).to eq 2023
+        end
+      end
+
+      context "create time tracker" do
+        before(:each) do
+          allow(plugin).to receive(:use_column_value).and_return(false)
+          allow(plugin).to receive(:jdbc_default_timezone).and_return(nil)
+        end
+
+        it "should write correctly" do
+          tracker = ValueTracking.build_last_value_tracker(plugin)
+          tracker.set_value("2023-06-15T15:28:15+02:00")
+          tracker.write
+
+          temp_file.rewind
+          v = ValueTracking.load_yaml(::File.read(temp_file.path))
+          expect(v.class).to eq Time
+          expect(v.min).to eq 28
+        end
+      end
+
     end
   end
 end end end
