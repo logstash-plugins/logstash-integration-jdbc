@@ -277,7 +277,7 @@ describe LogStash::Inputs::Jdbc do
       sleep 1
       for i in 0..1
         sleep 1
-        updated_last_run = YAML.load(File.read(settings["last_run_metadata_path"]))
+        updated_last_run = LogStash::PluginMixins::Jdbc::ValueTracking.load_yaml(File.read(settings["last_run_metadata_path"]))
         expect(updated_last_run).to be > last_run_time
         last_run_time = updated_last_run
       end
@@ -547,7 +547,7 @@ describe LogStash::Inputs::Jdbc do
         expect(actual).to eq(expected)
         plugin.stop
         raw_last_run_value = File.read(settings["last_run_metadata_path"])
-        last_run_value = YAML.load(raw_last_run_value)
+        last_run_value = LogStash::PluginMixins::Jdbc::ValueTracking.load_yaml(raw_last_run_value)
         expect(last_run_value).to be_a(DateTime)
         expect(last_run_value.strftime("%F %T.%N %Z")).to eq("2015-01-02 02:00:00.722000000 +00:00")
 
@@ -562,7 +562,7 @@ describe LogStash::Inputs::Jdbc do
         plugin.stop
         expect(event.get("num")).to eq(12)
         expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-02T03:00:00.811Z"))
-        last_run_value = YAML.load(File.read(settings["last_run_metadata_path"]))
+        last_run_value = LogStash::PluginMixins::Jdbc::ValueTracking.load_yaml(File.read(settings["last_run_metadata_path"]))
         expect(last_run_value).to be_a(DateTime)
         # verify that sub-seconds are recorded to the file
         expect(last_run_value.strftime("%F %T.%N %Z")).to eq("2015-01-02 03:00:00.811000000 +00:00")
@@ -1169,7 +1169,7 @@ describe LogStash::Inputs::Jdbc do
     context "when a file exists" do
       before do
         # in a faked HOME folder save a valid previous last_run metadata file
-        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with(anything).and_call_original
         allow(ENV).to receive(:[]).with('HOME').and_return(fake_home)
 
         File.open("#{fake_home}/.logstash_jdbc_last_run", 'w') do |file|
@@ -1722,7 +1722,7 @@ describe LogStash::Inputs::Jdbc do
           plugin.run(queue)
 
           expect(queue.size).to eq(expected_queue_size)
-          expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(expected_queue_size)
+          expect(LogStash::PluginMixins::Jdbc::ValueTracking.load_yaml(File.read(settings["last_run_metadata_path"]))).to eq(expected_queue_size)
         end
       end
 
@@ -1747,7 +1747,7 @@ describe LogStash::Inputs::Jdbc do
           plugin.run(queue)
 
           expect(queue.size).to eq(expected_queue_size)
-          expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(last_run_value + expected_queue_size)
+          expect(LogStash::PluginMixins::Jdbc::ValueTracking.load_yaml(File.read(settings["last_run_metadata_path"]))).to eq(last_run_value + expected_queue_size)
         end
       end
     end
