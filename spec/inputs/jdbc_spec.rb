@@ -1610,6 +1610,9 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "raise a loading error" do
+      expect(File.exists?(invalid_driver_jar_path)).to be true
+      expect(FileTest.readable?(invalid_driver_jar_path)).to be false
+
       expect { plugin.register }.
           to raise_error(LogStash::PluginLoadingError, /unable to load .*? from :jdbc_driver_library, file not readable/)
     end
