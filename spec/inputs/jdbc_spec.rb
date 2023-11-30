@@ -1599,7 +1599,7 @@ describe LogStash::Inputs::Jdbc do
       FileUtils.cp driver_jar_path, path
       FileUtils.chmod "u=x,go=", path
       # verify it's effectively read permissions are dropped
-      perm_bin = File.stat(path).mode.to_s(2)[-9..]
+      perm_bin = File.stat(path).mode.to_s(2)[-9..-1]
       expect(perm_bin[0]).to eq("0")
       expect(perm_bin[3]).to eq("0")
       expect(perm_bin[6]).to eq("0")
