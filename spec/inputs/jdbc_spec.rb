@@ -1597,7 +1597,8 @@ describe LogStash::Inputs::Jdbc do
     let(:invalid_driver_jar_path) do
       path = File.join(Dir.mktmpdir, File.basename(driver_jar_path))
       FileUtils.cp driver_jar_path, path
-      FileUtils.chmod "u=x,go=", path
+      num_processed = File.chmod(0100, path)
+      expect(num_processed).to eq(1)
       # verify it's effectively read permissions are dropped
       perm_bin = File.stat(path).mode.to_s(2)[-9..-1]
       expect(perm_bin[0]).to eq("0")
