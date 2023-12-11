@@ -1,3 +1,6 @@
+## 5.5.0
+  - Update embedded Apache Derby  version
+
 ## 5.4.6
   - Update sequel version to >= 5.73.0. The ibmdb and jdbc/db2 adapters were fixed to properly handle disconnect errors, removing the related connection from the pool [#144](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/144)
 
