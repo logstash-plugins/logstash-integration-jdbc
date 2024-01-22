@@ -603,6 +603,33 @@ describe LogStash::Inputs::Jdbc do
       # With no timezone set, no change should occur
       expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-01T12:00:00Z"))
     end
+
+    %w(
+        Etc/UTC
+        America/Los_Angeles
+        Europe/Berlin
+        Asia/Tokyo
+      ).each do |local_timezone|
+      context "when host machine has timezone `#{local_timezone}`" do
+        around(:each) do |example|
+          begin
+            previous_tz = ENV['TZ']
+            ENV['TZ'] = local_timezone
+            example.call
+          ensure
+            ENV['TZ'] = previous_tz
+          end
+        end
+
+        let(:tz) { TZInfo::Timezone.get(local_timezone) }
+
+        it "converts the time using the machine's local timezone" do
+          plugin.run(queue)
+          event = queue.pop
+          expect(event.get("custom_time").time).to eq(Time.new(2015,1,1,12,0,0,tz))
+        end
+      end
+    end
   end
 
   context "when iteratively running plugin#run" do
