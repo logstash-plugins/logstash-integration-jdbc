@@ -1,4 +1,9 @@
 import java.nio.file.Files
+import org.tmatesoft.svn.core.SVNDepth
+import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.wc.SVNClientManager
+import org.tmatesoft.svn.core.wc.SVNRevision
+import org.tmatesoft.svn.core.wc.SVNUpdateClient
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
@@ -7,6 +12,51 @@ apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
 def DERBY_VERSION = '10.14.1.0'
+def DERBY_MINOR = '10.16'
+
+buildscript {
+    ext {
+        svnkitVersion = '1.10.11'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.tmatesoft.svnkit:svnkit:${svnkitVersion}"
+    }
+}
+
+class SvnCheckout extends DefaultTask {
+
+    @Input
+    String svnRef = 'https://svn.apache.org/repos/asf/db/derby/code/branches/'
+
+    @Input
+    String branch = '10.16'
+
+    @OutputDirectory
+    File getCheckoutDir() {
+        return project.layout.buildDirectory.dir(branch).get().asFile
+    }
+
+    SvnCheckout() {
+        description = "Checkout a branch from svnRef"
+        group = "org.logstash.tooling"
+    }
+
+    @TaskAction
+    def checkout() {
+        SVNClientManager clientManager = SVNClientManager.newInstance();
+        SVNUpdateClient client = clientManager.getUpdateClient();
+        SVNURL svnurl = SVNURL.parseURIEncoded(svnRef + branch);
+
+        println "Starting checkout"
+        long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
+                SVNRevision.HEAD, SVNDepth.UNKNOWN, true);
+        println "Checked out at revision ${revision} in folder ${checkoutDir}"
+    }
+}
 
 repositories {
     mavenCentral()
@@ -16,6 +66,34 @@ repositories {
 dependencies {
     implementation "org.apache.derby:derby:${DERBY_VERSION}"
     implementation "org.apache.derby:derbyclient:${DERBY_VERSION}"
+}
+
+tasks.register("svnCheckout", SvnCheckout) {
+    branch = DERBY_MINOR
+}
+
+ant.lifecycleLogLevel = "INFO"
+
+tasks.register("importAnt") {
+    dependsOn svnCheckout
+
+    doLast {
+        ant.importBuild(layout.buildDirectory.file("${DERBY_MINOR}/build.xml").get().asFile) { antTargetName ->
+            'ant-' + antTargetName
+        }
+        println "Ant imported"
+    }
+}
+
+tasks.register("buildDerby") {
+    dependsOn importAnt
+
+    doLast {
+        ant.antProject.setBasedir(layout.buildDirectory.dir(DERBY_MINOR).get().asFile.toString())
+        ant.antProject.executeTarget("clobber")
+        ant.antProject.executeTarget("buildsource")
+        ant.antProject.executeTarget("buildjars")
+    }
 }
 
 task generateGemJarRequiresFile {
