@@ -112,9 +112,9 @@ tasks.register('deployLocallyDerbyArtifacts') {
     doLast {
         String derbyFullVersion = readFullDerbyVersion(DERBY_MINOR)
         copy {
-            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derby.jar")
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyshared.jar")
             into file('local_repository/')
-            rename 'derby.jar', "derby-${derbyFullVersion}.jar"
+            rename 'derbyshared.jar', "derby-${derbyFullVersion}.jar"
         }
         copy {
             from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyclient.jar")
