@@ -12,7 +12,7 @@ apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
 def DERBY_VERSION = '10.14.1.0'
-def DERBY_MINOR = '10.16'
+def DERBY_MINOR = '10.15'
 
 buildscript {
     ext {
@@ -64,8 +64,9 @@ repositories {
 
 
 dependencies {
-    implementation "org.apache.derby:derby:${DERBY_VERSION}"
-    implementation "org.apache.derby:derbyclient:${DERBY_VERSION}"
+//    implementation "org.apache.derby:derby:${DERBY_VERSION}"
+//    implementation "org.apache.derby:derbyclient:${DERBY_VERSION}"
+    implementation files('local_repository/derby-10.15.2.1.jar', 'local_repository/derbyclient-10.15.2.1.jar')
 }
 
 tasks.register("svnCheckout", SvnCheckout) {
@@ -93,6 +94,33 @@ tasks.register("buildDerby") {
         ant.antProject.executeTarget("clobber")
         ant.antProject.executeTarget("buildsource")
         ant.antProject.executeTarget("buildjars")
+    }
+}
+
+def readFullDerbyVersion(String derbyVersionBranch) {
+    def releasePropertiesFile = layout.buildDirectory.file("${derbyVersionBranch}/tools/ant/properties/release.properties").get().asFile
+    def props = new Properties()
+    releasePropertiesFile.withInputStream { props.load(it) }
+
+    return props.getProperty('release.id.long')
+}
+
+tasks.register('deployLocallyDerbyArtifacts') {
+    dependsOn buildDerby
+    description = "Copy Derby and Derby Client in local repository, which can be used to resolve dependencies"
+
+    doLast {
+        String derbyFullVersion = readFullDerbyVersion(DERBY_MINOR)
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derby.jar")
+            into file('local_repository/')
+            rename 'derby.jar', "derby-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyclient.jar")
+            into file('local_repository/')
+            rename 'derbyclient.jar', "derbyclient-${derbyFullVersion}.jar"
+        }
     }
 }
 
