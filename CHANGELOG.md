@@ -1,3 +1,6 @@
+## 5.4.8
+  - Update Derby with locally built 10.15.2.1 version [#155](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/155)
+
 ## 5.4.7
   - Update sequel version to >= 5.74.0. It fixes the generic jdbc adapter to properly handle disconnect errors [#153](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/153)
 
