@@ -77,7 +77,7 @@ tasks.register("svnCheckout", SvnCheckout) {
     description = "Checkout Derby sources for branch ${DERBY_MINOR} from Subversion repository at revision ${DERBY_REVISION}"
 }
 
-ant.lifecycleLogLevel = "INFO"
+ant.lifecycleLogLevel = "WARN"
 
 tasks.register("importAnt") {
     dependsOn svnCheckout
