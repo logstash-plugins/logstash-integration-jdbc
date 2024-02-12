@@ -132,6 +132,10 @@ tasks.register('deployLocallyDerbyArtifacts') {
     }
 }
 
+clean {
+    delete "${projectDir}/local_repository"
+}
+
 tasks.register("generateGemJarRequiresFile") {
     dependsOn deployLocallyDerbyArtifacts
 
