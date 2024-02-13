@@ -6,7 +6,8 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
-def DERBY_VERSION = '10.15.2.1'
+def DERBY_VERSION = '10.14.1.0'
+def DERBY_SVN_VERSION = '10.15.2.1'
 def DERBY_MINOR = '10.15'
 long DERBY_REVISION = 1905585
 
