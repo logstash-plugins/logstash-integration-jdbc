@@ -1,6 +1,8 @@
 import java.nio.file.Files
 import org.tmatesoft.svn.core.SVNDepth
 import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.SVNException
+import org.tmatesoft.svn.core.SVNErrorCode
 import org.tmatesoft.svn.core.wc.SVNClientManager
 import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNUpdateClient
@@ -68,9 +70,31 @@ class SvnCheckout extends DefaultTask {
         SVNURL svnurl = SVNURL.parseURIEncoded(svnRef + branch);
 
         println "Starting checkout"
-        long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
-                SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
-        println "Checked out at revision ${revision} in folder ${checkoutDir}"
+        boolean retry = false
+        int incrementalBackoff = 1_000
+        int numRetries = 5
+        do {
+            try {
+                long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
+                        SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
+                println "Checked out at revision ${revision} in folder ${checkoutDir}"
+                retry = false
+            } catch (SVNException ex) {
+                SVNErrorCode svnErrorCode = ex.getErrorMessage().getErrorCode()
+                if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
+                    // IO error, retry
+                    println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
+                    sleep(incrementalBackoff)
+                    incrementalBackoff += incrementalBackoff // 1, 2, 4, 8, 16
+                    numRetries--
+                    if (numRetries > 0) {
+                        retry = true
+                    } else {
+                        throw new IllegalStateException("Consumed all retries, failing the task", ex)
+                    }
+                }
+            }
+        } while (retry)
     }
 }
 
