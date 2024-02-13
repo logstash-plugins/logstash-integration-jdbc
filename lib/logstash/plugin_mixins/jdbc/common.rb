@@ -24,7 +24,8 @@ module LogStash module PluginMixins module Jdbc
       return @driver_impl if @driver_impl ||= nil
 
       require "java"
-      require "sequel"
+
+      require_relative "sequel_bootstrap"
       require "sequel/adapters/jdbc"
 
       # execute all the driver loading related duties in a serial fashion to avoid
