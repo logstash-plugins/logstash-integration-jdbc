@@ -68,7 +68,12 @@ repositories {
 
 
 dependencies {
-    implementation files("local_repository/derby-${DERBY_VERSION}.jar", "local_repository/derbyclient-${DERBY_VERSION}.jar")
+    implementation files(
+            "local_repository/derby-${DERBY_VERSION}.jar",
+            "local_repository/derbyclient-${DERBY_VERSION}.jar",
+            "local_repository/derbytools-${DERBY_VERSION}.jar",
+            "local_repository/derbyshared-${DERBY_VERSION}.jar"
+    )
 }
 
 tasks.register("svnCheckout", SvnCheckout) {
@@ -120,14 +125,24 @@ tasks.register('deployLocallyDerbyArtifacts') {
     doLast {
         String derbyFullVersion = readFullDerbyVersion(DERBY_MINOR)
         copy {
-            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyshared.jar")
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derby.jar")
             into file('local_repository/')
-            rename 'derbyshared.jar', "derby-${derbyFullVersion}.jar"
+            rename 'derby.jar', "derby-${derbyFullVersion}.jar"
         }
         copy {
             from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyclient.jar")
             into file('local_repository/')
             rename 'derbyclient.jar', "derbyclient-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbytools.jar")
+            into file('local_repository/')
+            rename 'derbytools.jar', "derbytools-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyshared.jar")
+            into file('local_repository/')
+            rename 'derbyshared.jar', "derbyshared-${derbyFullVersion}.jar"
         }
     }
 }

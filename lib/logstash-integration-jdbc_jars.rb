@@ -3,3 +3,5 @@
 require 'jar_dependencies'
 require_jar('org.apache.derby', 'derby', '10.15.2.1')
 require_jar('org.apache.derby', 'derbyclient', '10.15.2.1')
+require_jar('org.apache.derby', 'derbytools', '10.15.2.1')
+require_jar('org.apache.derby', 'derbyshared', '10.15.2.1')
