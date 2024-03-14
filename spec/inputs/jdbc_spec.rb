@@ -32,8 +32,6 @@ describe LogStash::Inputs::Jdbc do
   before :each do
     if !RSpec.current_example.metadata[:no_connection]
       # before body
-      #Load Derby driver
-#       Java::OrgApacheDerbyJdbc::EmbeddedDriver
       db.create_table :test_table do
         DateTime     :created_at
         BigDecimal   :big_num
