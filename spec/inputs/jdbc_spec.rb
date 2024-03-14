@@ -2,7 +2,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/devutils/rspec/shared_examples"
 require "logstash/inputs/jdbc"
-require "jdbc/derby"
 require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
@@ -33,7 +32,8 @@ describe LogStash::Inputs::Jdbc do
   before :each do
     if !RSpec.current_example.metadata[:no_connection]
       # before body
-      Jdbc::Derby.load_driver
+      #Load Derby driver
+      Java::OrgApacheDerbyJdbc::EmbeddedDriver
       db.create_table :test_table do
         DateTime     :created_at
         BigDecimal   :big_num
@@ -1589,7 +1589,7 @@ describe LogStash::Inputs::Jdbc do
 
   context "when an unreadable jdbc_driver_path entry is present" do
     let(:driver_jar_path) do
-      jar_file = $CLASSPATH.find { |name| name.index(Jdbc::Derby.driver_jar) }
+      jar_file = $CLASSPATH.find { |name| name.index("derby-10.15.2.1.jar") }
       raise "derby jar not found on class-path" unless jar_file
       jar_file.sub('file:', '')
     end

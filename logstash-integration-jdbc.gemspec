@@ -45,5 +45,4 @@ Gem::Specification.new do |s|
   s.add_development_dependency "childprocess"
   s.add_development_dependency 'logstash-devutils', '>= 2.3'
   s.add_development_dependency 'timecop'
-#   s.add_development_dependency 'jdbc-derby'
 end
