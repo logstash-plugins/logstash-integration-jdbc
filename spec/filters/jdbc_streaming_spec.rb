@@ -13,7 +13,7 @@ module LogStash module Filters
     let!(:jdbc_connection_string) { "jdbc:derby:memory:jdbc_streaming_testdb;create=true"}
     #Use embedded Derby for tests
     #Load Derby driver
-    Java::OrgApacheDerbyJdbc::EmbeddedDriver
+#     Java::OrgApacheDerbyJdbc::EmbeddedDriver
     ENV["TZ"] = "Etc/UTC"
     describe "plugin level execution" do
       let(:mixin_settings) do
