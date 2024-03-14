@@ -1587,9 +1587,21 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  def load_derby_version
+    version = {}
+    derby_version =  File.join(Dir.pwd, 'derby_version.txt')
+    File.readlines(derby_version, chomp: true).each do |line|
+      key = line.split('=')[0]
+      value = line.split('=')[1]
+      version[key] = value
+    end
+    version
+  end
+
   context "when an unreadable jdbc_driver_path entry is present" do
     let(:driver_jar_path) do
-      jar_file = $CLASSPATH.find { |name| name.index("derby-10.15.2.1.jar") }
+      derby_version = load_derby_version()['DERBY_VERSION']
+      jar_file = $CLASSPATH.find { |name| name.index("derby-#{derby_version}.jar") }
       raise "derby jar not found on class-path" unless jar_file
       jar_file.sub('file:', '')
     end

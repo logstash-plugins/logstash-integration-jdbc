@@ -11,10 +11,6 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
-def DERBY_VERSION = '10.15.2.1'
-def DERBY_MINOR = '10.15'
-long DERBY_REVISION = 1905585
-
 buildscript {
     ext {
         svnkitVersion = '1.10.11'
@@ -27,6 +23,22 @@ buildscript {
         classpath "org.tmatesoft.svnkit:svnkit:${svnkitVersion}"
     }
 }
+
+def loadDerbyVersion() {
+    Map version = [:]
+    new File("$projectDir/derby_version.txt").eachLine {line ->
+        def key = line.split('=')[0]
+        def value = line.split('=')[1]
+        version[key] = value
+    }
+    return version
+}
+
+def version = loadDerbyVersion()
+
+def DERBY_VERSION = version['DERBY_VERSION']
+def DERBY_MINOR = version['DERBY_MINOR']
+long DERBY_REVISION = 1905585
 
 class SvnCheckout extends DefaultTask {
 
