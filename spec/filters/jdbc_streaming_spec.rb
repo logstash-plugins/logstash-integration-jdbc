@@ -1,7 +1,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/devutils/rspec/shared_examples"
 require "logstash/filters/jdbc_streaming"
-require 'jdbc/derby'
 require "sequel"
 require "sequel/adapters/jdbc"
 
@@ -13,8 +12,6 @@ module LogStash module Filters
   describe JdbcStreaming do
     let!(:jdbc_connection_string) { "jdbc:derby:memory:jdbc_streaming_testdb;create=true"}
     #Use embedded Derby for tests
-    ::Jdbc::Derby.load_driver
-
     ENV["TZ"] = "Etc/UTC"
     describe "plugin level execution" do
       let(:mixin_settings) do
