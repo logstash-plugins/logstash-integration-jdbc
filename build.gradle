@@ -70,28 +70,44 @@ class SvnCheckout extends DefaultTask {
         SVNURL svnurl = SVNURL.parseURIEncoded(svnRef + branch);
 
         println "Starting checkout"
+        retryWithBackoff() {
+            long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
+                    SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
+            println "Checked out at revision ${revision} in folder ${checkoutDir}"
+        }
+    }
+
+    /**
+     * @param numRetries number of total reties before giving up with the action invocation. A value of 0 means no retries.
+     * @param initialPause initial time to delay between calls, in milliseconds.
+     * @param action the action to execute with retry mechanism in case of SVN error.
+     * */
+    protected def retryWithBackoff(int numRetries = 5, int initialPause = 1_000, Closure action) {
         boolean retry = false
-        int incrementalBackoff = 1_000
-        int numRetries = 5
+        int incrementalBackoff = initialPause
         do {
             try {
-                long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
-                        SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
-                println "Checked out at revision ${revision} in folder ${checkoutDir}"
+                // executes the action to protect with retries
+                action()
+
                 retry = false
             } catch (SVNException ex) {
                 SVNErrorCode svnErrorCode = ex.getErrorMessage().getErrorCode()
                 if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
+                    // SVN error code 175002 is "Premature end of file."
                     // IO error, retry
                     println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
                     sleep(incrementalBackoff)
-                    incrementalBackoff += incrementalBackoff // 1, 2, 4, 8, 16
+                    incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
                     numRetries--
                     if (numRetries > 0) {
                         retry = true
                     } else {
                         throw new IllegalStateException("Consumed all retries, failing the task", ex)
                     }
+                } else {
+                    // if error not recognized as recoverable, bubble up
+                    throw ex
                 }
             }
         } while (retry)
