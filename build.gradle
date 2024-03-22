@@ -83,14 +83,13 @@ class SvnCheckout extends DefaultTask {
      * @param action the action to execute with retry mechanism in case of SVN error.
      * */
     protected def retryWithBackoff(int numRetries = 5, int initialPause = 1_000, Closure action) {
-        boolean retry = false
         int incrementalBackoff = initialPause
         do {
             try {
                 // executes the action to protect with retries
                 action()
 
-                retry = false
+                numRetries = 0
             } catch (SVNException ex) {
                 SVNErrorCode svnErrorCode = ex.getErrorMessage().getErrorCode()
                 if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
@@ -100,9 +99,7 @@ class SvnCheckout extends DefaultTask {
                     sleep(incrementalBackoff)
                     incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
                     numRetries--
-                    if (numRetries > 0) {
-                        retry = true
-                    } else {
+                    if (numRetries <= 0) {
                         throw new IllegalStateException("Consumed all retries, failing the task", ex)
                     }
                 } else {
@@ -110,7 +107,7 @@ class SvnCheckout extends DefaultTask {
                     throw ex
                 }
             }
-        } while (retry)
+        } while (numRetries > 0)
     }
 }
 
