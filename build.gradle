@@ -90,24 +90,35 @@ class SvnCheckout extends DefaultTask {
                 action()
 
                 numRetries = 0
-            } catch (SVNException ex) {
-                SVNErrorCode svnErrorCode = ex.getErrorMessage().getErrorCode()
-                if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
-                    // SVN error code 175002 is "Premature end of file."
-                    // IO error, retry
-                    println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
-                    sleep(incrementalBackoff)
-                    incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
-                    numRetries--
-                    if (numRetries <= 0) {
-                        throw new IllegalStateException("Consumed all retries, failing the task", ex)
-                    }
-                } else {
+            } catch (Exception ex) {
+                if (!isSvnCheckoutError(ex)) {
                     // if error not recognized as recoverable, bubble up
                     throw ex
                 }
+
+                // IO error, retry
+                println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
+                sleep(incrementalBackoff)
+                incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
+                numRetries--
+                if (numRetries <= 0) {
+                    throw new IllegalStateException("Consumed all retries, failing the task", ex)
+                }
             }
         } while (numRetries > 0)
+    }
+
+    private boolean isSvnCheckoutError(Exception ex) {
+        if (ex instanceof SVNException) {
+            SVNException svnex = (SVNException) ex
+            SVNErrorCode svnErrorCode = svnex.getErrorMessage().getErrorCode()
+
+            // SVN error code 175002 is "Premature end of file."
+            if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
+                return true
+            }
+        }
+        return false
     }
 }
 
