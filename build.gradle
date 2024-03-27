@@ -1,6 +1,8 @@
 import java.nio.file.Files
 import org.tmatesoft.svn.core.SVNDepth
 import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.SVNException
+import org.tmatesoft.svn.core.SVNErrorCode
 import org.tmatesoft.svn.core.wc.SVNClientManager
 import org.tmatesoft.svn.core.wc.SVNRevision
 import org.tmatesoft.svn.core.wc.SVNUpdateClient
@@ -68,9 +70,55 @@ class SvnCheckout extends DefaultTask {
         SVNURL svnurl = SVNURL.parseURIEncoded(svnRef + branch);
 
         println "Starting checkout"
-        long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
-                SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
-        println "Checked out at revision ${revision} in folder ${checkoutDir}"
+        retryWithBackoff() {
+            long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
+                    SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
+            println "Checked out at revision ${revision} in folder ${checkoutDir}"
+        }
+    }
+
+    /**
+     * @param numRetries number of total reties before giving up with the action invocation. A value of 0 means no retries.
+     * @param initialPause initial time to delay between calls, in milliseconds.
+     * @param action the action to execute with retry mechanism in case of SVN error.
+     * */
+    protected def retryWithBackoff(int numRetries = 5, int initialPause = 1_000, Closure action) {
+        int incrementalBackoff = initialPause
+        do {
+            try {
+                // executes the action to protect with retries
+                action()
+
+                numRetries = 0
+            } catch (Exception ex) {
+                if (!isSvnCheckoutError(ex)) {
+                    // if error not recognized as recoverable, bubble up
+                    throw ex
+                }
+
+                // IO error, retry
+                println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
+                sleep(incrementalBackoff)
+                incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
+                numRetries--
+                if (numRetries <= 0) {
+                    throw new IllegalStateException("Consumed all retries, failing the task", ex)
+                }
+            }
+        } while (numRetries > 0)
+    }
+
+    private boolean isSvnCheckoutError(Exception ex) {
+        if (ex instanceof SVNException) {
+            SVNException svnex = (SVNException) ex
+            SVNErrorCode svnErrorCode = svnex.getErrorMessage().getErrorCode()
+
+            // SVN error code 175002 is "Premature end of file."
+            if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
+                return true
+            }
+        }
+        return false
     }
 }
 
