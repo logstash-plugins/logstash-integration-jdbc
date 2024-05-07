@@ -40,7 +40,7 @@ def version = loadDerbyVersion()
 
 def DERBY_VERSION = version['DERBY_VERSION']
 def DERBY_MINOR = version['DERBY_MINOR']
-long DERBY_REVISION = 1905585
+long DERBY_REVISION = 1917550
 
 class SvnCheckout extends DefaultTask {
 
