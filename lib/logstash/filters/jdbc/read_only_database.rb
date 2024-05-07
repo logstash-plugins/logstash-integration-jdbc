@@ -12,7 +12,7 @@ module LogStash module Filters module Jdbc
         if connected?
           result = @db[statement].count
         else
-          debug_log_messages.concat("and there is no connection to the remote db at this time")
+          debug_log_messages << "and there is no connection to the remote db at this time"
         end
       rescue ::Sequel::Error => err
         # a fatal issue
@@ -32,7 +32,7 @@ module LogStash module Filters module Jdbc
         if connected?
           result = @db[statement].all
         else
-          debug_log_messages.concat("and there is no connection to the remote db at this time")
+          debug_log_messages << "and there is no connection to the remote db at this time"
         end
       rescue ::Sequel::Error => err
         # a fatal issue
