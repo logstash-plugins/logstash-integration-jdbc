@@ -176,6 +176,29 @@ input {
 }
 ---------------------------------------------------------------------------------------------------
 
+==== Known limitations
+
+Theoretically, this plugin can function with any JDBC driver.
+However, the implementation of drivers may vary, potentially leading to unexpected behavior in connection pool management.
+
+===== Unable to reuse connection
+
+Stale connections may return to the pool, causing the plugin reuse closed connections. Sybase is affected by this issue.
+
+One solution is to enable <<plugins-{type}s-{plugin}-jdbc_validate_connection>> and set <<plugins-{type}s-{plugin}-jdbc_validation_timeout>> to a shorter interval than the <<plugins-{type}s-{plugin}-schedule>>.
+
+[source,ruby]
+---------------------------------------------------------------------------------------------------
+input {
+  jdbc {
+    schedule => "* * * * *"       # run every minute
+    jdbc_validate_connection => true
+    jdbc_validation_timeout => 55 # 55 seconds
+  }
+}
+---------------------------------------------------------------------------------------------------
+
+
 
 [id="plugins-{type}s-{plugin}-options"]
 ==== Jdbc Input Configuration Options
