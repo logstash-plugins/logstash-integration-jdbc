@@ -179,7 +179,7 @@ input {
 ==== Database-specific considerations
 
 The JDBC input plugin leverages the "sequel" library to query databases through their JDBC drivers.
-However, the implementation of drivers may vary, potentially leading to unexpected behavior in connection pool management.
+The implementation of drivers will vary, however, potentially leading to unexpected behavior.
 
 ===== Unable to reuse connection
 
