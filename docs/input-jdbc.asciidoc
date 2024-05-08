@@ -176,7 +176,7 @@ input {
 }
 ---------------------------------------------------------------------------------------------------
 
-==== Known limitations
+==== Database-specific considerations
 
 Theoretically, this plugin can function with any JDBC driver.
 However, the implementation of drivers may vary, potentially leading to unexpected behavior in connection pool management.
