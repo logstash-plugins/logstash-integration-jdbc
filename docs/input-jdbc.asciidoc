@@ -193,7 +193,7 @@ input {
   jdbc {
     schedule => "* * * * *"       # run every minute
     jdbc_validate_connection => true
-    jdbc_validation_timeout => 55 # 55 seconds
+    jdbc_validation_timeout => 50 # 50 seconds
   }
 }
 ---------------------------------------------------------------------------------------------------
