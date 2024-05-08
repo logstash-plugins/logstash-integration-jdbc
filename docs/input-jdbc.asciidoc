@@ -185,7 +185,7 @@ The implementation of drivers will vary, however, potentially leading to unexpec
 
 Stale connections may return to the pool, causing the plugin reuse closed connections. Sybase is affected by this issue.
 
-One solution is to enable <<plugins-{type}s-{plugin}-jdbc_validate_connection>> and set <<plugins-{type}s-{plugin}-jdbc_validation_timeout>> to a shorter interval than the <<plugins-{type}s-{plugin}-schedule>>.
+To ensure connections are valid before queries are executed, enable <<plugins-{type}s-{plugin}-jdbc_validate_connection>> and set <<plugins-{type}s-{plugin}-jdbc_validation_timeout>> to a shorter interval than the <<plugins-{type}s-{plugin}-schedule>>.
 
 [source,ruby]
 ---------------------------------------------------------------------------------------------------
