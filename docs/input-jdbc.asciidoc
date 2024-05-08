@@ -181,7 +181,7 @@ input {
 The JDBC input plugin leverages the https://github.com/jeremyevans/sequel[sequel] library to query databases through their JDBC drivers.
 The implementation of drivers will vary, however, potentially leading to unexpected behavior.
 
-===== Unable to reuse connection
+===== Unable to reuse connections
 
 Some databases - such as Sybase or SQL Anywhere - may have issues with stale connections, timing out between scheduled runs and never reconnecting.
 
