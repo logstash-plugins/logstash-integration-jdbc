@@ -178,12 +178,12 @@ input {
 
 ==== Database-specific considerations
 
-The JDBC input plugin leverages the "sequel" library to query databases through their JDBC drivers.
+The JDBC input plugin leverages the https://github.com/jeremyevans/sequel[sequel] library to query databases through their JDBC drivers.
 The implementation of drivers will vary, however, potentially leading to unexpected behavior.
 
 ===== Unable to reuse connection
 
-Stale connections may return to the pool, causing the plugin reuse closed connections. Sybase is affected by this issue.
+Some databases - such as Sybase or SQL Anywhere - may have issues with stale connections, timing out between scheduled runs and never reconnecting.
 
 To ensure connections are valid before queries are executed, enable <<plugins-{type}s-{plugin}-jdbc_validate_connection>> and set <<plugins-{type}s-{plugin}-jdbc_validation_timeout>> to a shorter interval than the <<plugins-{type}s-{plugin}-schedule>>.
 
