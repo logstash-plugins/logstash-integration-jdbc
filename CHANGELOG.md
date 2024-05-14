@@ -1,3 +1,16 @@
+## 5.4.10
+ - Adds retry mechanism when checkout Derby from SVN repository [#158](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/158)
+ - [DOC] add known limitations and settings for connection issue [#167](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/167)
+
+## 5.4.9
+  - Fix Derby missed driver classes when built locally for version 10.15 [#160](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/160)
+
+## 5.4.8
+  - Update Derby with locally built 10.15.2.1 version [#155](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/155) 
+
+## 5.4.7
+  - Update sequel version to >= 5.74.0. It fixes the generic jdbc adapter to properly handle disconnect errors [#153](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/153)
+
 ## 5.4.6
   - Update sequel version to >= 5.73.0. The ibmdb and jdbc/db2 adapters were fixed to properly handle disconnect errors, removing the related connection from the pool [#144](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/144)
 

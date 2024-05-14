@@ -1,4 +1,11 @@
 import java.nio.file.Files
+import org.tmatesoft.svn.core.SVNDepth
+import org.tmatesoft.svn.core.SVNURL
+import org.tmatesoft.svn.core.SVNException
+import org.tmatesoft.svn.core.SVNErrorCode
+import org.tmatesoft.svn.core.wc.SVNClientManager
+import org.tmatesoft.svn.core.wc.SVNRevision
+import org.tmatesoft.svn.core.wc.SVNUpdateClient
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
@@ -6,7 +13,114 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
-def DERBY_VERSION = '10.14.1.0'
+buildscript {
+    ext {
+        svnkitVersion = '1.10.11'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.tmatesoft.svnkit:svnkit:${svnkitVersion}"
+    }
+}
+
+def loadDerbyVersion() {
+    Map version = [:]
+    new File("$projectDir/derby_version.txt").eachLine {line ->
+        def key = line.split('=')[0]
+        def value = line.split('=')[1]
+        version[key] = value
+    }
+    return version
+}
+
+def version = loadDerbyVersion()
+
+def DERBY_VERSION = version['DERBY_VERSION']
+def DERBY_MINOR = version['DERBY_MINOR']
+long DERBY_REVISION = 1905585
+
+class SvnCheckout extends DefaultTask {
+
+    @Input
+    String svnRef = 'https://svn.apache.org/repos/asf/db/derby/code/branches/'
+
+    @Input
+    String branch
+
+    @Input
+    long revision
+
+    @OutputDirectory
+    File getCheckoutDir() {
+        return project.layout.buildDirectory.dir(branch).get().asFile
+    }
+
+    SvnCheckout() {
+        description = "Checkout a branch from svnRef"
+        group = "org.logstash.tooling"
+    }
+
+    @TaskAction
+    def checkout() {
+        SVNClientManager clientManager = SVNClientManager.newInstance();
+        SVNUpdateClient client = clientManager.getUpdateClient();
+        SVNURL svnurl = SVNURL.parseURIEncoded(svnRef + branch);
+
+        println "Starting checkout"
+        retryWithBackoff() {
+            long revision = client.doCheckout(svnurl, checkoutDir, SVNRevision.HEAD,
+                    SVNRevision.create(revision), SVNDepth.UNKNOWN, true);
+            println "Checked out at revision ${revision} in folder ${checkoutDir}"
+        }
+    }
+
+    /**
+     * @param numRetries number of total reties before giving up with the action invocation. A value of 0 means no retries.
+     * @param initialPause initial time to delay between calls, in milliseconds.
+     * @param action the action to execute with retry mechanism in case of SVN error.
+     * */
+    protected def retryWithBackoff(int numRetries = 5, int initialPause = 1_000, Closure action) {
+        int incrementalBackoff = initialPause
+        do {
+            try {
+                // executes the action to protect with retries
+                action()
+
+                numRetries = 0
+            } catch (Exception ex) {
+                if (!isSvnCheckoutError(ex)) {
+                    // if error not recognized as recoverable, bubble up
+                    throw ex
+                }
+
+                // IO error, retry
+                println "Received SVN error ${ex}, retry number ${numRetries} sleeping ${incrementalBackoff} millis"
+                sleep(incrementalBackoff)
+                incrementalBackoff = incrementalBackoff * 2 // 1, 2, 4, 8, 16 seconds
+                numRetries--
+                if (numRetries <= 0) {
+                    throw new IllegalStateException("Consumed all retries, failing the task", ex)
+                }
+            }
+        } while (numRetries > 0)
+    }
+
+    private boolean isSvnCheckoutError(Exception ex) {
+        if (ex instanceof SVNException) {
+            SVNException svnex = (SVNException) ex
+            SVNErrorCode svnErrorCode = svnex.getErrorMessage().getErrorCode()
+
+            // SVN error code 175002 is "Premature end of file."
+            if (svnErrorCode == SVNErrorCode.IO_ERROR || svnErrorCode.getCode() == 175002) {
+                return true
+            }
+        }
+        return false
+    }
+}
 
 repositories {
     mavenCentral()
@@ -14,34 +128,150 @@ repositories {
 
 
 dependencies {
-    implementation "org.apache.derby:derby:${DERBY_VERSION}"
-    implementation "org.apache.derby:derbyclient:${DERBY_VERSION}"
+    implementation files(
+            "local_repository/derby-${DERBY_VERSION}.jar",
+            "local_repository/derbyclient-${DERBY_VERSION}.jar",
+            "local_repository/derbytools-${DERBY_VERSION}.jar",
+            "local_repository/derbyshared-${DERBY_VERSION}.jar"
+    )
 }
 
-task generateGemJarRequiresFile {
+tasks.register("svnCheckout", SvnCheckout) {
+    branch = DERBY_MINOR
+    revision = DERBY_REVISION
+    description = "Checkout Derby sources for branch ${DERBY_MINOR} from Subversion repository at revision ${DERBY_REVISION}"
+}
+
+ant.lifecycleLogLevel = "WARN"
+
+tasks.register("importAnt") {
+    dependsOn svnCheckout
+    description = "Load Derby's Ant project definition"
+
+    doLast {
+        ant.importBuild(layout.buildDirectory.file("${DERBY_MINOR}/build.xml").get().asFile) { antTargetName ->
+            'ant-' + antTargetName
+        }
+        println "Ant imported"
+    }
+}
+
+tasks.register("buildDerby") {
+    dependsOn importAnt
+    group = 'build'
+    description = "Build Derby checked out sources using its Apache Ant script"
+
+    doLast {
+        ant.antProject.setBasedir(layout.buildDirectory.dir(DERBY_MINOR).get().asFile.toString())
+        ant.antProject.executeTarget("clobber")
+        ant.antProject.executeTarget("buildsource")
+        ant.antProject.executeTarget("buildjars")
+    }
+}
+
+def readFullDerbyVersion(String derbyVersionBranch) {
+    def releasePropertiesFile = layout.buildDirectory.file("${derbyVersionBranch}/tools/ant/properties/release.properties").get().asFile
+    def props = new Properties()
+    releasePropertiesFile.withInputStream { props.load(it) }
+
+    return props.getProperty('release.id.long')
+}
+
+tasks.register('deployLocallyDerbyArtifacts') {
+    dependsOn buildDerby
+    group = 'build'
+    description = "Copy Derby and Derby Client in local repository, which can be used to resolve dependencies"
+
+    doLast {
+        String derbyFullVersion = readFullDerbyVersion(DERBY_MINOR)
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derby.jar")
+            into file('local_repository/')
+            rename 'derby.jar', "derby-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyclient.jar")
+            into file('local_repository/')
+            rename 'derbyclient.jar', "derbyclient-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbytools.jar")
+            into file('local_repository/')
+            rename 'derbytools.jar', "derbytools-${derbyFullVersion}.jar"
+        }
+        copy {
+            from layout.buildDirectory.dir("${DERBY_MINOR}/jars/sane/derbyshared.jar")
+            into file('local_repository/')
+            rename 'derbyshared.jar', "derbyshared-${derbyFullVersion}.jar"
+        }
+    }
+}
+
+clean {
+    delete "${projectDir}/local_repository"
+}
+
+tasks.register("generateGemJarRequiresFile") {
+    dependsOn deployLocallyDerbyArtifacts
+
     doLast {
         File jars_file = file('lib/logstash-integration-jdbc_jars.rb')
         jars_file.newWriter().withWriter { w ->
             w << "# AUTOGENERATED BY THE GRADLE SCRIPT. DO NOT EDIT.\n\n"
             w << "require \'jar_dependencies\'\n"
             configurations.runtimeClasspath.allDependencies.each {
-                w << "require_jar(\'${it.group}\', \'${it.name}\', \'${it.version}\')\n"
+                if (!(it instanceof SelfResolvingDependency)) {
+                    w << "require_jar(\'${it.group}\', \'${it.name}\', \'${it.version}\')\n"
+                } else {
+                    // in this case the single dependency contains all the files, looping
+                    // on those to create the require_jar statements
+                    configurations.runtimeClasspath.each { File depJarFile ->
+                        String artifactName = depJarFile.name.split('-')[0]
+                        String artifactVersion = depJarFile.name.split('-')[1].split('\\.jar')[0]
+                        def group = "org.apache.derby"
+                        w << "require_jar(\'${group}\', \'${artifactName}\', \'${artifactVersion}\')\n"
+                    }
+                }
             }
         }
     }
 }
 
-task vendor {
+tasks.register("vendor") {
+    dependsOn deployLocallyDerbyArtifacts
+
     doLast {
         String vendorPathPrefix = "vendor/jar-dependencies"
         configurations.runtimeClasspath.allDependencies.each { dep ->
-	    File f = configurations.runtimeClasspath.filter { it.absolutePath.contains("${dep.group}/${dep.name}/${dep.version}") }.singleFile
-            String groupPath = dep.group.replaceAll('\\.', '/')
-            File newJarFile = file("${vendorPathPrefix}/${groupPath}/${dep.name}/${dep.version}/${dep.name}-${dep.version}.jar")
-            newJarFile.mkdirs()
-            Files.copy(f.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
+            if (!(dep instanceof SelfResolvingDependency)) {
+                // dep is an instance of org.gradle.api.artifacts.ExternalDependency
+                copyExternalDependencyJarToVendor(dep, vendorPathPrefix)
+            } else {
+                // in this case the single dependency contains all the files, looping and
+                // move those in the expected location
+                configurations.runtimeClasspath.each { File depJarFile ->
+                    copyLocalDependencyJarToVendor(depJarFile, vendorPathPrefix, "org/apache/derby")
+                }
+            }
         }
     }
+}
+
+private void copyExternalDependencyJarToVendor(Dependency dep, String vendorPathPrefix) {
+    File f = configurations.runtimeClasspath.filter { it.absolutePath.contains("${dep.group}/${dep.name}/${dep.version}") }.singleFile
+    String groupPath = dep.group.replaceAll('\\.', '/')
+    File newJarFile = file("${vendorPathPrefix}/${groupPath}/${dep.name}/${dep.version}/${dep.name}-${dep.version}.jar")
+    newJarFile.mkdirs()
+    Files.copy(f.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
+}
+
+private void copyLocalDependencyJarToVendor(File depJarFile, String vendorPathPrefix, String groupPath) {
+    String artifactName = depJarFile.name.split('-')[0]
+    String artifactVersion = depJarFile.name.split('-')[1].split('\\.jar')[0]
+
+    File newJarFile = file("${vendorPathPrefix}/${groupPath}/${artifactName}/${artifactVersion}/${depJarFile.name}")
+    newJarFile.mkdirs()
+    Files.copy(depJarFile.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
 }
 
 vendor.dependsOn(generateGemJarRequiresFile)
