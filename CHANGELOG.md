@@ -1,3 +1,6 @@
+## 5.4.11
+ - Fixes an issue in which any one instance of a JDBC input plugin using `jdbc_default_timezone` changes the behaviour of plugin instances that do _not_ use `jdbc_default_timezone`, ensuring that timezone offsets remain consistent for each instance of the plugin _as configured_ [#151](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/151)
+
 ## 5.4.10
  - Adds retry mechanism when checkout Derby from SVN repository [#158](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/158)
  - [DOC] add known limitations and settings for connection issue [#167](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/167)
