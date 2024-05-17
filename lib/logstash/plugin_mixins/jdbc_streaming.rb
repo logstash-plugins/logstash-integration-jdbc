@@ -51,7 +51,8 @@ module LogStash module PluginMixins module JdbcStreaming
     config :jdbc_validate_connection, :validate => :boolean, :default => false
 
     # Connection pool configuration.
-    # How often to validate a connection (in seconds)
+    # How often to validate a connection (in seconds).
+    # Validation is done only when a connection is borrowed from the pool and not done actively while lays in the pool.
     config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 

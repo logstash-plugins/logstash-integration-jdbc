@@ -213,6 +213,7 @@ Validate connection before use.
 
 Connection pool configuration.
 How often to validate a connection (in seconds).
+Validation is done only when a connection is borrowed from the pool and not done actively while lays in the pool.
 
 [id="plugins-{type}s-{plugin}-parameters"]
 ===== `parameters`

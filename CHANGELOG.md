@@ -1,3 +1,6 @@
+## Unreleased
+ - [DOC] clarified the usage of `jdbc_validation_timeout`and `connection_retry_attempts_wait_time` settings.
+
 ## 5.4.10
  - Adds retry mechanism when checkout Derby from SVN repository [#158](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/158)
  - [DOC] add known limitations and settings for connection issue [#167](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/167)
