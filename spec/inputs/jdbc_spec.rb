@@ -35,11 +35,12 @@ describe LogStash::Inputs::Jdbc do
       db.create_table :test_table do
         DateTime     :created_at
         BigDecimal   :big_num
+        String       :uuid
         Integer      :num
         String       :string
         DateTime     :custom_time
       end
-      db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6))"
+      db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6), uuid VARCHAR(36))"
       db << "CREATE TABLE test1_table (num INTEGER, string VARCHAR(255), custom_time TIMESTAMP, created_at TIMESTAMP)"
     end
   end
@@ -1522,7 +1523,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     before do
-      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking, uuid) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67, '018f15f3-6cfd-7a1b-b70f-d97ed8a73128')"
 
       plugin.register
     end
@@ -1539,6 +1540,7 @@ describe LogStash::Inputs::Jdbc do
       expect(event.get("started_at")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T00:00:00.000Z")
       expect(event.get("custom_time")).to be_a_logstash_timestamp_equivalent_to("1999-12-31T23:59:59.000Z")
       expect(event.get("ranking").to_f).to eq(95.67)
+      expect(event.get("uuid")).to eq("018f15f3-6cfd-7a1b-b70f-d97ed8a73128")
     end
   end
 
@@ -1552,7 +1554,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     before(:each) do
-      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '2021-11-07 01:23:45', 95.67)"
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking, uuid) VALUES (1, 'A test', '1999-12-31', '2021-11-07 01:23:45', 95.67, '018f15f3-6cfd-7a1b-b70f-d97ed8a73128')"
       plugin.register
     end
 

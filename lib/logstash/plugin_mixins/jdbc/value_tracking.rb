@@ -12,16 +12,21 @@ module LogStash module PluginMixins module Jdbc
         handler.clean
       end
 
-      if plugin.use_column_value && plugin.tracking_column_type == "numeric"
-        # use this irrespective of the jdbc_default_timezone setting
-        NumericValueTracker.new(handler)
-      else
-        if plugin.jdbc_default_timezone.nil?
-          # no TZ stuff for Sequel, use Time
-          TimeValueTracker.new(handler)
+      if plugin.use_column_value
+        case plugin.tracking_column_type
+        when "numeric"
+          # use this irrespective of the jdbc_default_timezone setting
+          NumericValueTracker.new(handler)
+        when "uuid"
+          UuidValueTracker.new(handler)
         else
-          # Sequel does timezone handling on DateTime only
-          DateTimeValueTracker.new(handler)
+          if plugin.jdbc_default_timezone.nil?
+            # no TZ stuff for Sequel, use Time
+            TimeValueTracker.new(handler)
+          else
+            # Sequel does timezone handling on DateTime only
+            DateTimeValueTracker.new(handler)
+          end
         end
       end
     end
@@ -34,7 +39,7 @@ module LogStash module PluginMixins module Jdbc
     end
 
     if Psych::VERSION&.split('.')&.first.to_i >= 4
-      YAML_PERMITTED_CLASSES = [::DateTime, ::Time, ::BigDecimal].freeze
+      YAML_PERMITTED_CLASSES = [::DateTime, ::Time, ::BigDecimal, ::String].freeze
       def self.load_yaml(source)
         Psych::safe_load(source, permitted_classes: YAML_PERMITTED_CLASSES)
       end
@@ -77,6 +82,17 @@ module LogStash module PluginMixins module Jdbc
 
     def set_value(value)
       return unless value.is_a?(Numeric)
+      @value = value
+    end
+  end
+
+  class UuidValueTracker < ValueTracking
+    def set_initial
+      common_set_initial(:uuid, "00000000-0000-0000-0000-000000000000")
+    end
+
+    def set_value(value)
+      return unless value.is_a?(String)
       @value = value
     end
   end
