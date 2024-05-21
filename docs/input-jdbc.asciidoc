@@ -294,7 +294,7 @@ Maximum number of times to try connecting to database
   * Value type is <<number,number>>
   * Default value is `0.5`
 
-Number of seconds to sleep between connection attempts
+Number of seconds to sleep between connection pool creation attempts. Used only during the registration of the plugin.
 
 [id="plugins-{type}s-{plugin}-jdbc_connection_string"]
 ===== `jdbc_connection_string`
@@ -508,7 +508,8 @@ Validate connection before use.
   * Default value is `3600`
 
 Connection pool configuration.
-How often to validate a connection (in seconds)
+How often to validate a connection (in seconds).
+Validation is done only when a connection is borrowed from the pool and not done actively while lays in the pool.
 
 [id="plugins-{type}s-{plugin}-last_run_metadata_path"]
 ===== `last_run_metadata_path`

@@ -69,7 +69,8 @@ module LogStash  module PluginMixins module Jdbc
       config :jdbc_validate_connection, :validate => :boolean, :default => false
 
       # Connection pool configuration.
-      # How often to validate a connection (in seconds)
+      # How often to validate a connection (in seconds).
+      # Validation is done only when a connection is borrowed from the pool and not done actively while lays in the pool.
       config :jdbc_validation_timeout, :validate => :number, :default => 3600
 
       # Connection pool configuration.
@@ -101,7 +102,7 @@ module LogStash  module PluginMixins module Jdbc
 
       # Maximum number of times to try connecting to database
       config :connection_retry_attempts, :validate => :number, :default => 1
-      # Number of seconds to sleep between connection attempts
+      # Number of seconds to sleep between connection pool creation attempts. Used only during the registration of the plugin.
       config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
 
       # Maximum number of times to try running statement
