@@ -12,21 +12,22 @@ module LogStash module PluginMixins module Jdbc
         handler.clean
       end
 
-      if plugin.use_column_value
+      tracking_column_types = ['numeric', 'uuid']
+      if plugin.use_column_value && tracking_column_types.include?(plugin.tracking_column_type)
         case plugin.tracking_column_type
         when "numeric"
           # use this irrespective of the jdbc_default_timezone setting
           NumericValueTracker.new(handler)
         when "uuid"
           UuidValueTracker.new(handler)
+        end
+      else
+        if plugin.jdbc_default_timezone.nil?
+          # no TZ stuff for Sequel, use Time
+          TimeValueTracker.new(handler)
         else
-          if plugin.jdbc_default_timezone.nil?
-            # no TZ stuff for Sequel, use Time
-            TimeValueTracker.new(handler)
-          else
-            # Sequel does timezone handling on DateTime only
-            DateTimeValueTracker.new(handler)
-          end
+          # Sequel does timezone handling on DateTime only
+          DateTimeValueTracker.new(handler)
         end
       end
     end
