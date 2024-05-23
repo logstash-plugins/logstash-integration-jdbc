@@ -1,10 +1,10 @@
 ## 5.4.11
-- Fixes an issue in which any one instance of a JDBC input plugin using `jdbc_default_timezone` changes the behaviour of plugin instances that do _not_ use `jdbc_default_timezone`, ensuring that timezone offsets remain consistent for each instance of the plugin _as configured_ [#151](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/151)
-- Fixes an exception that could occur while reloading `jdbc_static` databases when the underlying connection to the remote has been broken [#165](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/165)
+  - Fixes an issue in which any one instance of a JDBC input plugin using `jdbc_default_timezone` changes the behaviour of plugin instances that do _not_ use `jdbc_default_timezone`, ensuring that timezone offsets remain consistent for each instance of the plugin _as configured_ [#151](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/151)
+  - Fixes an exception that could occur while reloading `jdbc_static` databases when the underlying connection to the remote has been broken [#165](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/165)
 
 ## 5.4.10
-- Adds retry mechanism when checkout Derby from SVN repository [#158](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/158)
-- [DOC] add known limitations and settings for connection issue [#167](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/167)
+  - Adds retry mechanism when checkout Derby from SVN repository [#158](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/158)
+  - [DOC] add known limitations and settings for connection issue [#167](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/167)
 
 ## 5.4.9
   - Fix Derby missed driver classes when built locally for version 10.15 [#160](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/160)
