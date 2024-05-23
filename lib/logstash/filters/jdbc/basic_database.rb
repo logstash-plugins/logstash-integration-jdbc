@@ -1,6 +1,6 @@
 # encoding: utf-8
 require "fileutils"
-require "sequel"
+require "logstash/plugin_mixins/jdbc/sequel_bootstrap"
 require "sequel/adapters/jdbc"
 require "java"
 require "logstash/util/loggable"
