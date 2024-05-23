@@ -9,10 +9,6 @@ import org.tmatesoft.svn.core.wc.SVNUpdateClient
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'maven-publish'
-
 buildscript {
     ext {
         svnkitVersion = '1.10.11'
@@ -24,6 +20,12 @@ buildscript {
     dependencies {
         classpath "org.tmatesoft.svnkit:svnkit:${svnkitVersion}"
     }
+}
+
+plugins {
+  id 'java'
+  id 'idea'
+  id 'maven-publish'
 }
 
 def loadDerbyVersion() {
