@@ -14,10 +14,8 @@ module LogStash module PluginMixins module Jdbc
     # Decorate the value so it can be used as a LogStash::Event field
     def decorate_value(value)
       case value
-      when Time
-        LogStash::Timestamp.new(value)
       when Date, DateTime
-        LogStash::Timestamp.new(value.to_time)
+        value.to_time
       else
         value
       end
