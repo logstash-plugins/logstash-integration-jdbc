@@ -116,6 +116,39 @@ module LogStash module Filters
           plugin.filter(event)
           expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-server-1", "location"=>"MV-9-6-4"}])
         end
+
+        context 'and record with temporal columns' do
+          let(:loader_statement) { "SELECT ip, name, location, entry_date, entry_time, timestamp FROM reference_table" }
+          let(:local_db_objects) do
+            [
+              {
+                "name" => "servers",
+                "columns" => [
+                  %w[ip varchar(64)],
+                  %w[name varchar(64)],
+                  %w[location varchar(64)],
+                  %w[entry_date date],
+                  %w[entry_time time],
+                  %w[timestamp timestamp]
+                ]
+              },
+            ]
+          end
+
+          it "fills in the target" do
+            plugin.register
+            plugin.filter(event)
+
+            now = DateTime.now
+            sever = event.get("server").first
+            expect(sever['ip']).to eq("10.3.1.1")
+            expect(sever['name']).to eq("mv-server-1")
+            expect(sever['location']).to eq("MV-9-6-4")
+            expect(sever['entry_date']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1)))
+            expect(sever['entry_time']).to eq(LogStash::Timestamp.new(Time.new(now.year, now.month, now.day, 10, 5, 0)))
+            expect(sever['timestamp']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1, 1, 2, 3)))
+          end
+        end
       end
 
       context "under normal conditions when index_columns is not specified" do

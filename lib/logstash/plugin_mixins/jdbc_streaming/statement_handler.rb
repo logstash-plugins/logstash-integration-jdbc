@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/util/loggable"
+require "logstash/plugin_mixins/jdbc/value_handler"
 
 module LogStash module PluginMixins module JdbcStreaming
   # so as to not clash with the class of the same name and function in the jdbc input
@@ -7,6 +8,8 @@ module LogStash module PluginMixins module JdbcStreaming
   # this duplication can be removed in a universal plugin
 
   class StatementHandler
+    include LogStash::PluginMixins::Jdbc::ValueHandler
+
     def self.build_statement_handler(plugin)
       klass = plugin.use_prepared_statements ? PreparedStatementHandler : NormalStatementHandler
       klass.new(plugin)
@@ -86,7 +89,7 @@ module LogStash module PluginMixins module JdbcStreaming
     def execute_extract_records(db, params, result)
       dataset = db[statement, params] # returns a Sequel dataset
       dataset.all do |row|
-        result.push row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} # Stringify row keys
+        result.push extract_values_from(row)
       end
     end
 
@@ -113,7 +116,7 @@ module LogStash module PluginMixins module JdbcStreaming
     def execute_extract_records(db, params, result)
       records = db.call(name, params) # returns an array of hashes
       records.each do |row|
-        result.push row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
+        result.push extract_values_from(row)
       end
     end
 

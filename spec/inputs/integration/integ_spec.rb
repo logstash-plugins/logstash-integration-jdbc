@@ -66,6 +66,24 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         expect(event.get('first_name')).to eq('David')
       end
     end
+
+    context 'with temporal columns' do
+      let(:settings) do
+        super().merge("statement" => 'SELECT FIRST_NAME, LAST_NAME, ENTRY_DATE, ENTRY_TIME, TIMESTAMP FROM "employee" WHERE EMP_NO = 2')
+      end
+
+      it "should populate the event with database entries" do
+        plugin.run(queue)
+
+        now = DateTime.now
+        event = queue.pop
+        expect(event.get('first_name')).to eq("Mark")
+        expect(event.get('last_name')).to eq("Guckenheimer")
+        expect(event.get('entry_date')).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1)))
+        expect(event.get('entry_time')).to eq(LogStash::Timestamp.new(Time.new(now.year, now.month, now.day, 10, 5, 0)))
+        expect(event.get('timestamp')).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1, 1, 2, 3)))
+      end
+    end
   end
 
   context "when supplying a non-existent library" do

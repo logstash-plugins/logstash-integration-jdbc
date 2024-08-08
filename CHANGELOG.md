@@ -1,3 +1,6 @@
+## 5.5.0 
+  - Feat: add support for SQL `DATE` columns to jdbc static and streaming filters [#TBD](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/TBD)
+
 ## 5.4.11
   - Fixes an issue in which any one instance of a JDBC input plugin using `jdbc_default_timezone` changes the behaviour of plugin instances that do _not_ use `jdbc_default_timezone`, ensuring that timezone offsets remain consistent for each instance of the plugin _as configured_ [#151](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/151)
   - Fixes an exception that could occur while reloading `jdbc_static` databases when the underlying connection to the remote has been broken [#165](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/165)
