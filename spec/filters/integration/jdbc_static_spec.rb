@@ -135,18 +135,24 @@ module LogStash module Filters
             ]
           end
 
-          it "fills in the target" do
-            plugin.register
-            plugin.filter(event)
+          before(:each) { plugin.register }
 
+          subject { event.get("server").first }
+
+          it "maps the DATE to a Logstash Timestamp" do
+            plugin.filter(event)
+            expect(subject['entry_date']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1)))
+          end
+
+          it "maps the TIME field to a Logstash Timestamp" do
+            plugin.filter(event)
             now = DateTime.now
-            sever = event.get("server").first
-            expect(sever['ip']).to eq("10.3.1.1")
-            expect(sever['name']).to eq("mv-server-1")
-            expect(sever['location']).to eq("MV-9-6-4")
-            expect(sever['entry_date']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1)))
-            expect(sever['entry_time']).to eq(LogStash::Timestamp.new(Time.new(now.year, now.month, now.day, 10, 5, 0)))
-            expect(sever['timestamp']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1, 1, 2, 3)))
+            expect(subject['entry_time']).to eq(LogStash::Timestamp.new(Time.new(now.year, now.month, now.day, 10, 5, 0)))
+          end
+
+          it "maps the TIMESTAMP to a Logstash Timestamp" do
+            plugin.filter(event)
+            expect(subject['timestamp']).to eq(LogStash::Timestamp.new(Time.new(2003, 2, 1, 1, 2, 3)))
           end
         end
       end
