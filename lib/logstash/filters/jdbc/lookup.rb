@@ -1,10 +1,12 @@
 # encoding: utf-8
 require_relative "lookup_result"
 require "logstash/util/loggable"
+require "logstash/plugin_mixins/jdbc/value_handler"
 
 module LogStash module Filters module Jdbc
   class Lookup
     include LogStash::Util::Loggable
+    include LogStash::PluginMixins::Jdbc::ValueHandler
 
     class Sprintfier
       def initialize(param)
@@ -134,15 +136,13 @@ module LogStash module Filters module Jdbc
 
     def load_data_from_local(local, query, params, result)
       local.fetch(query, params).each do |row|
-        stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
-        result.push(stringified)
+        result.push(extract_values_from(row))
       end
     end
 
     def load_data_from_prepared(_local, _query, params, result)
       @prepared_statement.call(params).each do |row|
-        stringified = row.inject({}){|hash,(k,v)| hash[k.to_s] = v; hash} #Stringify row keys
-        result.push(stringified)
+        result.push(extract_values_from(row))
       end
     end
 

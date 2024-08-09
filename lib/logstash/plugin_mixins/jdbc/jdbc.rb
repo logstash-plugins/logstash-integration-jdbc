@@ -6,6 +6,7 @@ require "date"
 require_relative "value_tracking"
 require_relative "timezone_proxy"
 require_relative "statement_handler"
+require_relative "value_handler"
 
 java_import java.util.concurrent.locks.ReentrantLock
 
@@ -13,6 +14,7 @@ java_import java.util.concurrent.locks.ReentrantLock
 # for potential reuse in other plugins (input/output)
 module LogStash  module PluginMixins module Jdbc
   module Jdbc
+    include LogStash::PluginMixins::Jdbc::ValueHandler
     # This method is called when someone includes this module
     def self.included(base)
       # Add these methods to the 'base' given.
@@ -250,25 +252,6 @@ module LogStash  module PluginMixins module Jdbc
       else
         # Otherwise send the updated tracking column
         row[@tracking_column.to_sym]
-      end
-    end
-
-    private
-    #Stringify row keys and decorate values when necessary
-    def extract_values_from(row)
-      Hash[row.map { |k, v| [k.to_s, decorate_value(v)] }]
-    end
-
-    private
-    def decorate_value(value)
-      case value
-      when Time
-        # transform it to LogStash::Timestamp as required by LS
-        LogStash::Timestamp.new(value)
-      when Date, DateTime
-        LogStash::Timestamp.new(value.to_time)
-      else
-        value
       end
     end
   end
