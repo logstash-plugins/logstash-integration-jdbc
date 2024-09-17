@@ -3,3 +3,8 @@ Gemfile.lock
 .bundle
 vendor
 derby.log
+build
+.ci/
+checkpoint.sha
+.gradle
+.idea
