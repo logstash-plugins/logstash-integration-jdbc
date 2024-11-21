@@ -1,7 +1,10 @@
 import:
   - logstash-plugins/.ci:travis/travis.yml@1.x
 
-env:
-  jobs: # test with old scheduler version (3.0 was locked in LS 7.x)
-    - ELASTIC_STACK_VERSION=7.x RUFUS_SCHEDULER_VERSION=3.0.9
-    - ELASTIC_STACK_VERSION=8.2.0 RUFUS_SCHEDULER_VERSION=3.0.9
+jobs:
+  exclude:
+  - env: ELASTIC_STACK_VERSION=7.current
+  - env: SNAPSHOT=true ELASTIC_STACK_VERSION=7.current
+  include:
+  - env: ELASTIC_STACK_VERSION=7.current RUFUS_SCHEDULER_VERSION=3.0.9 SNAPSHOT=true
+  - env: ELASTIC_STACK_VERSION=7.current RUFUS_SCHEDULER_VERSION=3.0.9
