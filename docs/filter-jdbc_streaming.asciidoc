@@ -178,7 +178,8 @@ JDBC driver class to load, for example "oracle.jdbc.OracleDriver" or "org.apache
   * Value type is <<path,path>>
   * There is no default value for this setting.
 
-JDBC driver library path to third party driver library.
+JDBC driver library path to third party driver library. In case of multiple libraries being
+required you can pass them separated by a comma.
 
 [id="plugins-{type}s-{plugin}-jdbc_password"]
 ===== `jdbc_password`
