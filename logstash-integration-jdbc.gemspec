@@ -23,7 +23,6 @@ Gem::Specification.new do |s|
   }
 
   # Gem dependencies
-  s.add_development_dependency 'jar-dependencies', '~> 0.3'
 
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
   # Restrict use of this plugin to versions of Logstash where support for integration plugins is present.
