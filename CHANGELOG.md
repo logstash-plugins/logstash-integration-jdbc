@@ -1,3 +1,6 @@
+## 5.5.1
+  - Document `statement_retry_attempts` and `statement_retry_attempts_wait_time` options
+
 ## 5.5.0
   - Feat: add support for SQL `DATE` columns to jdbc static and streaming filters [#171](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/171)
 

@@ -238,6 +238,8 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-sql_log_level>> |<<string,string>>, one of `["fatal", "error", "warn", "info", "debug"]`|No
 | <<plugins-{type}s-{plugin}-statement>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-statement_filepath>> |a valid filesystem path|No
+| <<plugins-{type}s-{plugin}-statement_retry_attempts>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-statement_retry_attempts_wait_time>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-target>> | {logstash-ref}/field-references-deepdive.html[field reference] | No
 | <<plugins-{type}s-{plugin}-tracking_column>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-tracking_column_type>> |<<string,string>>, one of `["numeric", "timestamp"]`|No
@@ -622,6 +624,22 @@ with the `parameters` setting.
   * There is no default value for this setting.
 
 Path of file containing statement to execute
+
+[id="plugins-{type}s-{plugin}-statement_retry_attempts"]
+===== `statement_retry_attempts`
+
+  * Value type is <<number,number>>
+  * Default value is `1`
+
+Maximum number of times to try executing a statement.
+
+[id="plugins-{type}s-{plugin}-statement_retry_attempts_wait_time"]
+===== `statement_retry_attempts_wait_time`
+
+  * Value type is <<number,number>>
+  * Default value is `0.5`
+
+Number of seconds to sleep between statement execution attempts.
 
 [id="plugins-{type}s-{plugin}-target"]
 ===== `target`
