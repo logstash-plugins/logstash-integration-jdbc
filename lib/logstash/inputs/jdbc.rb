@@ -305,6 +305,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
+    load_driver
   end # def register
 
   # test injection points
@@ -317,7 +318,6 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   def run(queue)
-    load_driver
     if @schedule
       # scheduler input thread name example: "[my-oracle]|input|jdbc|scheduler"
       scheduler.cron(@schedule) { execute_query(queue) }
