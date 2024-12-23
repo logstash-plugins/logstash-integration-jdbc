@@ -113,13 +113,16 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     end
 
     it "log warning msg when plugin run" do
+      plugin.register
       expect( plugin ).to receive(:log_java_exception)
       expect(plugin.logger).to receive(:warn).once.with("Exception when executing JDBC query",
                                                         hash_including(:message => instance_of(String)))
-      expect{ plugin.register }.to raise_error(::LogStash::ConfigurationError)
+      q = Queue.new
+      expect{ plugin.run(q) }.not_to raise_error
     end
 
     it "should log (native) Java driver error" do
+      plugin.register
       expect( org.apache.logging.log4j.LogManager ).to receive(:getLogger).and_wrap_original do |m, *args|
         logger = m.call(*args)
         expect( logger ).to receive(:error) do |_, e|
@@ -127,7 +130,8 @@ describe LogStash::Inputs::Jdbc, :integration => true do
         end.and_call_original
         logger
       end
-      expect{ plugin.register }.to raise_error(::LogStash::ConfigurationError)
+      q = Queue.new
+      expect{ plugin.run(q) }.not_to raise_error
     end
   end
 end

@@ -3,15 +3,17 @@
 require "logstash/config/mixin"
 require "time"
 require "date"
+require "thread" # Monitor
 require_relative "value_tracking"
 require_relative "timezone_proxy"
 require_relative "statement_handler"
 require_relative "value_handler"
 
-java_import java.util.concurrent.locks.ReentrantLock
-
 # Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
+#
+# CAUTION: implementation of this "potential reuse" module is
+#          VERY tightly-coupled with the JDBC Input's implementation.
 module LogStash  module PluginMixins module Jdbc
   module Jdbc
     include LogStash::PluginMixins::Jdbc::ValueHandler
@@ -159,82 +161,94 @@ module LogStash  module PluginMixins module Jdbc
     end
 
     def open_jdbc_connection
-      # at this point driver is already loaded
-      Sequel.application_timezone = @plugin_timezone.to_sym
+      @connection_lock.synchronize do
+        # at this point driver is already loaded
+        Sequel.application_timezone = @plugin_timezone.to_sym
 
-      @database = jdbc_connect()
-      @database.extension(:pagination)
-      if @jdbc_default_timezone
-        @database.extension(:named_timezones)
-        @database.timezone = TimezoneProxy.load(@jdbc_default_timezone)
-      end
-      if @jdbc_validate_connection
-        @database.extension(:connection_validator)
-        @database.pool.connection_validation_timeout = @jdbc_validation_timeout
-      end
-      @database.fetch_size = @jdbc_fetch_size unless @jdbc_fetch_size.nil?
-      begin
-        @database.test_connection
-      rescue Java::JavaSql::SQLException => e
-        @logger.warn("Failed test_connection with java.sql.SQLException.", :exception => e)
-      rescue Sequel::DatabaseConnectionError => e
-        @logger.warn("Failed test_connection.", :exception => e)
-        #TODO return false and let the plugin raise a LogStash::ConfigurationError
-        raise e
-      end
+        @database = jdbc_connect()
+        @database.extension(:pagination)
+        if @jdbc_default_timezone
+          @database.extension(:named_timezones)
+          @database.timezone = TimezoneProxy.load(@jdbc_default_timezone)
+        end
+        if @jdbc_validate_connection
+          @database.extension(:connection_validator)
+          @database.pool.connection_validation_timeout = @jdbc_validation_timeout
+        end
+        @database.fetch_size = @jdbc_fetch_size unless @jdbc_fetch_size.nil?
+        begin
+          @database.test_connection
+        rescue Java::JavaSql::SQLException => e
+          @logger.warn("Failed test_connection with java.sql.SQLException.", :exception => e)
+        rescue Sequel::DatabaseConnectionError => e
+          @logger.warn("Failed test_connection.", :exception => e)
+          #TODO return false and let the plugin raise a LogStash::ConfigurationError
+          raise e
+        end
 
-      @database.sql_log_level = @sql_log_level.to_sym
-      @database.logger = @logger
+        @database.sql_log_level = @sql_log_level.to_sym
+        @database.logger = @logger
 
-      @database.extension :identifier_mangling
+        @database.extension :identifier_mangling
 
-      if @lowercase_column_names
-        @database.identifier_output_method = :downcase
-      else
-        @database.identifier_output_method = :to_s
+        if @lowercase_column_names
+          @database.identifier_output_method = :downcase
+        else
+          @database.identifier_output_method = :to_s
+        end
       end
+    end
+
+    public
+    def prepare_jdbc_connection
+      @connection_lock = Monitor.new # aka ReentrantLock
     end
 
     public
     def close_jdbc_connection
-      begin
+      @connection_lock.synchronize do
         # pipeline restarts can also close the jdbc connection, block until the current executing statement is finished to avoid leaking connections
         # connections in use won't really get closed
         @database.disconnect if @database
-      rescue => e
-        @logger.warn("Failed to close connection", :exception => e)
       end
+    rescue => e
+      @logger.warn("Failed to close connection", :exception => e)
     end
 
     public
-    def execute_statement
+    def execute_statement(&result_handler)
       success = false
       retry_attempts = @statement_retry_attempts
 
-      begin
-        retry_attempts -= 1
-        sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
-        @tracking_column_warning_sent = false
-        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
-          sql_last_value = get_column_value(row) if @use_column_value
-          yield extract_values_from(row)
-        end
-        success = true
-      rescue Sequel::Error, Java::JavaSql::SQLException => e
-        details = { exception: e.class, message: e.message }
-        details[:cause] = e.cause.inspect if e.cause
-        details[:backtrace] = e.backtrace if @logger.debug?
-        @logger.warn("Exception when executing JDBC query", details)
+      @connection_lock.synchronize do
+        begin
+          retry_attempts -= 1
+          open_jdbc_connection
+          sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
+          @tracking_column_warning_sent = false
+          @statement_handler.perform_query(@database, @value_tracker.value) do |row|
+            sql_last_value = get_column_value(row) if @use_column_value
+            yield extract_values_from(row)
+          end
+          success = true
+        rescue Sequel::Error, Java::JavaSql::SQLException => e
+          details = { exception: e.class, message: e.message }
+          details[:cause] = e.cause.inspect if e.cause
+          details[:backtrace] = e.backtrace if @logger.debug?
+          @logger.warn("Exception when executing JDBC query", details)
 
-        if retry_attempts == 0
-          @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
+          if retry_attempts == 0
+            @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
+          else
+            @logger.error("Unable to execute statement. Trying again.")
+            sleep(@statement_retry_attempts_wait_time)
+            retry
+          end
         else
-          @logger.error("Unable to execute statement. Trying again.")
-          sleep(@statement_retry_attempts_wait_time)
-          retry
+          @value_tracker.set_value(sql_last_value)
+        ensure
+          close_jdbc_connection
         end
-      else
-        @value_tracker.set_value(sql_last_value)
       end
 
       return success
