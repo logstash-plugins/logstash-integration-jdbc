@@ -5,8 +5,8 @@ require "logstash/config/mixin"
 # for potential reuse in other plugins (input/output)
 module LogStash module PluginMixins module JdbcStreaming
   class RowCache
-    def initialize(size, ttl)
-      @cache = ::LruRedux::TTL::ThreadSafeCache.new(size, ttl)
+    def initialize(size, ttl, ignore_nil)
+      @cache = ::LruRedux::TTL::ThreadSafeCache.new(size, ttl, ignore_nil)
     end
 
     def get(parameters)
@@ -15,7 +15,7 @@ module LogStash module PluginMixins module JdbcStreaming
   end
 
   class NoCache
-    def initialize(size, ttl) end
+    def initialize(size, ttl, ignore_nil) end
 
     def get(statement)
       yield

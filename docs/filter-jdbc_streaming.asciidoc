@@ -92,6 +92,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
+| <<plugins-{type}s-{plugin}-ignore_empty_cache>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-cache_expiration>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-cache_size>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-default_hash>> |<<hash,hash>>|No
@@ -119,6 +120,14 @@ Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options suppo
 filter plugins.
 
 &nbsp;
+
+[id="plugins-{type}s-{plugin}-ignore_empty_cache"]
+===== `ignore_empty_cache`
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `true`
+
+When set to `true`, skips caching nil values. Defaults to true.
 
 [id="plugins-{type}s-{plugin}-cache_expiration"]
 ===== `cache_expiration`
