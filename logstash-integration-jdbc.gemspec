@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   # Pinned sequel version to >= 5.74.0 as it fixes the generic jdbc adapter to properly
   # handle disconnection errors, and avoid stale connections in the pool.
   s.add_runtime_dependency 'sequel', '>= 5.74.0'
-  s.add_runtime_dependency 'lru_redux' # lru cache with ttl
+  s.add_runtime_dependency 'sin_lru_redux' # lru cache with ttl
 
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
