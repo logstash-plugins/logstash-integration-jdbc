@@ -1,3 +1,6 @@
+## 5.5.3
+  - [DOC] Rework inline comment to a callout in preparation for upcoming MD conversion [#181](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/181)
+
 ## 5.5.2
   - FIX: the input plugin's prior behaviour of opening a new database connection for each scheduled run (removed in `v5.4.1`) is restored, ensuring that infrequently-run schedules do not hold open connections to their databases indefinitely, _without_ reintroducing the leak [#130](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/130)
 

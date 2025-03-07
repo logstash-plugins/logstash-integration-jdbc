@@ -123,7 +123,7 @@ filter {
     add_field => { user_lastname => "%{[user][0][lastname]}" }
     remove_field => ["server", "user"]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
-    loader_schedule => "* */2 * * *" # run loaders every 2 hours
+    loader_schedule => "* */2 * * *" <8>
     jdbc_user => "logstash"
     jdbc_password => "example"
     jdbc_driver_class => "org.postgresql.Driver"
@@ -153,6 +153,7 @@ returns multiple columns, the data is stored as a JSON object within the field.
 <6> When the user is not found in the database, an event is created using data from the <<plugins-{type}s-{plugin}-local_lookups>> `default hash` setting, and the event is tagged with the list set in <<plugins-{type}s-{plugin}-tag_on_default_use>>.
 <7> Takes data from the JSON object and stores it in top-level event fields for
 easier analysis in Kibana.
+<8> Runs loaders every 2 hours.
 
 Here's a full example:
 
