@@ -29,8 +29,9 @@ module LogStash module Filters
       ::Sequel.connect(mixin_settings['jdbc_connection_string'])
     end
     let(:event)      { ::LogStash::Event.new("message" => "some text", "ip" => ipaddr) }
-    let(:cache_expiration) { 3.0 }
     let(:use_cache) { true }
+    let(:ignore_empty_cache) { true }
+    let(:cache_expiration) { 3.0 }
     let(:cache_size) { 10 }
     let(:statement) { "SELECT name, location FROM reference_table WHERE ip = :ip" }
     let(:settings) do
@@ -39,6 +40,7 @@ module LogStash module Filters
         "parameters" => {"ip" => "ip"},
         "target" => "server",
         "use_cache" => use_cache,
+        "ignore_empty_cache" => ignore_empty_cache,
         "cache_expiration" => cache_expiration,
         "cache_size" => cache_size,
         "tag_on_failure" => ["lookup_failed"],
@@ -99,6 +101,7 @@ module LogStash module Filters
           "prepared_statement_bind_values" => ["[ip]"],
           "target" => "server",
           "use_cache" => use_cache,
+          "ignore_empty_cache" => ignore_empty_cache,
           "cache_expiration" => cache_expiration,
           "cache_size" => cache_size,
           "tag_on_failure" => ["lookup_failed"],

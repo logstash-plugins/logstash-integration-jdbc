@@ -20,7 +20,7 @@ module LogStash module PluginMixins module JdbcStreaming
     def initialize(plugin)
       @statement = plugin.statement
       klass = plugin.use_cache ? RowCache : NoCache
-      @cache = klass.new(plugin.cache_size, plugin.cache_expiration)
+      @cache = klass.new(plugin.cache_size, plugin.cache_expiration, plugin.ignore_empty_cache)
       post_init(plugin)
     end
 
