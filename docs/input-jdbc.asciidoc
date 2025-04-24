@@ -41,9 +41,9 @@ options for more info.
 
 Input from this plugin can be scheduled to run periodically according to a specific
 schedule. This scheduling syntax is powered by https://github.com/jmettraux/rufus-scheduler[rufus-scheduler].
-The syntax is cron-like with some extensions specific to Rufus (e.g. timezone support ).
+The syntax is either cron-like with some extensions specific to Rufus (e.g. timezone support ) if using the `schedule` option or periodic when using `period` or `interval` option.
 
-Examples:
+Examples for `schedule`:
 
 |==========================================================
 | `* 5 * 1-3 *`               | will execute every minute of 5am every day of January through March.
@@ -51,8 +51,20 @@ Examples:
 | `0 6 * * * America/Chicago` | will execute at 6:00am (UTC/GMT -5) every day.
 |==========================================================
 
+Examples for `period` or `interval`:
+
+|==========================================================
+| `1m`                        | will execute every minute
+| `3h10m`                     | will execute every three hours and 10 minutes
+|==========================================================
 
 Further documentation describing this syntax can be found https://github.com/jmettraux/rufus-scheduler#parsing-cronlines-and-time-strings[here].
+
+`interval` jobs trigger, execute and then trigger again after the interval elapsed.
+
+`period` jobs try to trigger following the frequency they were scheduled with.
+
+If you provide more than one scheduling statement, then `schedule` takes precedence over `interval` which takes precedence over `period`.
 
 ==== State
 
@@ -212,6 +224,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-columns_charset>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-connection_retry_attempts>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-connection_retry_attempts_wait_time>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-interval>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-jdbc_connection_string>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-jdbc_default_timezone>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-jdbc_driver_class>> |<<string,string>>|Yes
@@ -229,6 +242,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-last_run_metadata_path>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-lowercase_column_names>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-parameters>> |<<hash,hash>>|No
+| <<plugins-{type}s-{plugin}-period>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-plugin_timezone>> |<<string,string>>, one of `["local", "utc"]`|No
 | <<plugins-{type}s-{plugin}-prepared_statement_bind_values>> |<<array,array>>|No
 | <<plugins-{type}s-{plugin}-prepared_statement_name>> |<<string,string>>|No
@@ -294,9 +308,21 @@ Maximum number of times to try connecting to database
 ===== `connection_retry_attempts_wait_time`
 
   * Value type is <<number,number>>
-  * Default value is `0.5`
+  * Default value is 0.5
 
 Number of seconds to sleep between connection attempts
+
+[id="plugins-{type}s-{plugin}-interval"]
+===== `interval`
+
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
+
+This takes a string in the form of `1h`, `1m`, to denote a time interval. `interval` jobs trigger, execute and trigger again after the provided time interval has elapsed.
+
+There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
+
+If you provide more than one scheduling statement, then <<plugins-{type}s-{plugin}-schedule>> takes precedence over `interval` which takes precedence over <<plugins-{type}s-{plugin}-period>>.
 
 [id="plugins-{type}s-{plugin}-jdbc_connection_string"]
 ===== `jdbc_connection_string`
@@ -538,6 +564,18 @@ Whether to force the lowercasing of identifier fields
 
 Hash of query parameter, for example `{ "target_id" => "321" }`
 
+[id="plugins-{type}s-{plugin}-period"]
+===== `period`
+
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
+
+This takes a string in the form of `1h`, `1m`, to denote a time interval. `period` jobs try hard to trigger following the frequency they were scheduled with.
+
+There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
+
+If you provide more than one scheduling statement, then <<plugins-{type}s-{plugin}-schedule>> takes precedence over <<plugins-{type}s-{plugin}-interval>> which takes precedence over `period`.
+
 [id="plugins-{type}s-{plugin}-prepared_statement_bind_values"]
 ===== `prepared_statement_bind_values`
 
@@ -568,11 +606,11 @@ Whether to save state or not in <<plugins-{type}s-{plugin}-last_run_metadata_pat
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-Schedule of when to periodically run statement, in Cron format
-for example: "* * * * *" (execute query every minute, on the minute)
+Schedule of when to periodically run statement, in Cron format for example: "* * * * *" (execute query every minute, on the minute)
 
-There is no schedule by default. If no schedule is given, then the statement is run
-exactly once.
+There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
+
+If you provide more than one scheduling statement, then `schedule` takes precedence over <<plugins-{type}s-{plugin}-interval>> which takes precedence over <<plugins-{type}s-{plugin}-period>>.
 
 [id="plugins-{type}s-{plugin}-sequel_opts"]
 ===== `sequel_opts`
