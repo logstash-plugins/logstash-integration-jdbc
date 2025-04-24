@@ -308,7 +308,7 @@ Maximum number of times to try connecting to database
 ===== `connection_retry_attempts_wait_time`
 
   * Value type is <<number,number>>
-  * Default value is 0.5
+  * Default value is `0.5`
 
 Number of seconds to sleep between connection attempts
 
