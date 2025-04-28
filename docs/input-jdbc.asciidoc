@@ -64,7 +64,7 @@ Further documentation describing this syntax can be found https://github.com/jme
 
 `period` jobs try to trigger following the frequency they were scheduled with.
 
-If you provide more than one scheduling statement, then `schedule` takes precedence over `interval` which takes precedence over `period`.
+You can only use of `interval`, `period` or `schedule` at the same time.
 
 ==== State
 
@@ -322,8 +322,6 @@ This takes a string in the form of `1h`, `1m`, to denote a time interval. `inter
 
 There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
 
-If you provide more than one scheduling statement, then <<plugins-{type}s-{plugin}-schedule>> takes precedence over `interval` which takes precedence over <<plugins-{type}s-{plugin}-period>>.
-
 [id="plugins-{type}s-{plugin}-jdbc_connection_string"]
 ===== `jdbc_connection_string`
 
@@ -574,8 +572,6 @@ This takes a string in the form of `1h`, `1m`, to denote a time interval. `perio
 
 There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
 
-If you provide more than one scheduling statement, then <<plugins-{type}s-{plugin}-schedule>> takes precedence over <<plugins-{type}s-{plugin}-interval>> which takes precedence over `period`.
-
 [id="plugins-{type}s-{plugin}-prepared_statement_bind_values"]
 ===== `prepared_statement_bind_values`
 
@@ -609,8 +605,6 @@ Whether to save state or not in <<plugins-{type}s-{plugin}-last_run_metadata_pat
 Schedule of when to periodically run statement, in Cron format for example: "* * * * *" (execute query every minute, on the minute)
 
 There is no schedule by default. If no scheduling statement is given, then the statement is run exactly once.
-
-If you provide more than one scheduling statement, then `schedule` takes precedence over <<plugins-{type}s-{plugin}-interval>> which takes precedence over <<plugins-{type}s-{plugin}-period>>.
 
 [id="plugins-{type}s-{plugin}-sequel_opts"]
 ===== `sequel_opts`
