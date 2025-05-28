@@ -255,6 +255,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   def register
     @logger = self.logger
 
+    if [@interval, @schedule, @period].compact.size > 1
+      raise LogStash::ConfigurationError.new("Use only one of: interval, period, schedule.")
+    end
+
+
     if @record_last_run
       if @last_run_metadata_path.nil?
         logstash_data_path = LogStash::SETTINGS.get_value("path.data")
