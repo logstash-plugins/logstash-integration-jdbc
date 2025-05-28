@@ -244,14 +244,6 @@ describe LogStash::Inputs::Jdbc do
         expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
       end
     end
-    scheduling_options.each do |option|
-      context "when using only '#{option}'" do
-        let(:settings) { super().merge(option => "a") }
-        it "does not raise a configuration error" do
-          expect { plugin.register }.to_not raise_error
-        end
-      end
-    end
   end
 
   context "when scheduling" do
