@@ -1,4 +1,4 @@
-:integration: jdbc
+⁰:integration: jdbc
 :plugin: jdbc
 :type: input
 :default_codec: plain
@@ -64,7 +64,7 @@ Further documentation describing this syntax can be found https://github.com/jme
 
 `period` jobs try to trigger following the frequency they were scheduled with.
 
-You can only use of `interval`, `period` or `schedule` at the same time.
+You can only use one of `interval`, `period` or `schedule` at the same time.
 
 ==== State
 
