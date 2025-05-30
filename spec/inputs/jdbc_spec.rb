@@ -229,19 +229,28 @@ describe LogStash::Inputs::Jdbc do
   end
 
   describe "scheduling options" do
+    let(:settings) { super().merge("statement" => "SELECT :num_param as num_param FROM SYSIBM.SYSDUMMY1") }
     scheduling_options = ["interval", "schedule", "period"]
     scheduling_options.combination(2).each do |option1, option2|
       context "when using '#{option1}' and '#{option2}' at the same time" do
         let(:settings) { super().merge(option1 => 'a', option2 => 'b') }
         it "raises a configuration error" do
-          expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+          expect { plugin.register }.to raise_error(LogStash::ConfigurationError, /Use only one/)
         end
       end
     end
     context "when using 'schedule', 'period' and 'interval' at the same time" do
       let(:settings) { super().merge("interval" => "a", "period" => "b", "schedule" => "c") }
       it "raises a configuration error" do
-        expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+        expect { plugin.register }.to raise_error(LogStash::ConfigurationError, /Use only one/)
+      end
+    end
+    scheduling_options.each do |option|
+      context "when using only '#{option}'" do
+        let(:settings) { super().merge(option => "a") }
+        it "does not raise a configuration error" do
+          expect { plugin.register }.to_not raise_error
+        end
       end
     end
   end
