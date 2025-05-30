@@ -1,3 +1,6 @@
+## 5.6.0
+  - Support other rufus scheduling options in JDBC Input [#183](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/183)
+
 ## 5.5.3
   - [DOC] Rework inline comment to a callout in preparation for upcoming MD conversion [#181](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/181)
 
