@@ -76,6 +76,9 @@ module LogStash module Filters class JdbcStreaming < LogStash::Filters::Base
   # Enable or disable caching, boolean true or false, defaults to true
   config :use_cache, :validate => :boolean, :default => true
 
+  # Enable or disable caching nil values, boolean true or false, defaults to true
+  config :ignore_empty_cache, :validate => :boolean, :default => true
+
   # The minimum number of seconds any entry should remain in the cache, defaults to 5 seconds
   # A numeric value, you can use decimals for example `{ "cache_expiration" => 0.25 }`
   # If there are transient jdbc errors the cache will store empty results for a given
