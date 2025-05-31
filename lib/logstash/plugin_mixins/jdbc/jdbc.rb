@@ -127,18 +127,18 @@ module LogStash  module PluginMixins module Jdbc
           return Sequel.connect(@jdbc_connection_string, sequel_opts)
         rescue Sequel::PoolTimeout => e
           if retry_attempts <= 0
-            @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
+            @logger.error("Failed to connect to database #{@jdbc_connection_string}. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
             raise e
           else
-            @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")
+            @logger.error("Failed to connect to database #{@jdbc_connection_string}. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")
           end
         rescue Java::JavaSql::SQLException, ::Sequel::Error => e
           if retry_attempts <= 0
             log_java_exception(e.cause)
-            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", error_details(e, trace: true))
+            @logger.error("Unable to connect to database #{@jdbc_connection_string}. Tried #{@connection_retry_attempts} times", error_details(e, trace: true))
             raise e
           else
-            @logger.error("Unable to connect to database. Trying again", error_details(e, trace: false))
+            @logger.error("Unable to connect to database #{@jdbc_connection_string}. Trying again", error_details(e, trace: false))
           end
         end
         sleep(@connection_retry_attempts_wait_time)
