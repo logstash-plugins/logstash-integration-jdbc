@@ -157,6 +157,85 @@ module LogStash module Filters
         end
       end
 
+      context "under normal conditions with prepared statement with multiple positional parameters" do
+
+        let(:event) { LogStash::Event.new("host" => { "ip" => "10.3.1.1", "name" => "mv-server-1"}, "message" => "ping") }
+        let(:lookup_statement) { "SELECT * FROM servers WHERE ip = ? AND name = ?" }
+
+        let(:settings) do
+          {
+            "jdbc_user" => ENV['USER'],
+            "jdbc_password" => ENV["POSTGRES_PASSWORD"],
+            "jdbc_driver_class" => "org.postgresql.Driver",
+            "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
+            "staging_directory" => temp_import_path_plugin,
+            "jdbc_connection_string" => jdbc_connection_string,
+            "loaders" => [
+              {
+                "id" =>"servers",
+                "query" => loader_statement,
+                "local_table" => "servers"
+              }
+            ],
+            "local_db_objects" => local_db_objects,
+            "local_lookups" => [
+              {
+                "query" => lookup_statement,
+                "prepared_parameters" => ["[host][ip]", "[host][name]"],
+                "target" => "server"
+              }
+            ]
+          }
+        end
+
+        it "enhances an event" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-server-1", "location"=>"MV-9-6-4"}])
+        end
+      end
+
+      context "under normal conditions with query with multiple named parameters" do
+
+        let(:event) { LogStash::Event.new("host" => { "ip" => "10.3.1.1", "name" => "mv-server-1"}, "message" => "ping") }
+        let(:lookup_statement) { "SELECT * FROM servers WHERE ip = :host_ip AND name = :host_name" }
+
+        let(:settings) do
+          {
+            "jdbc_user" => ENV['USER'],
+            "jdbc_password" => ENV["POSTGRES_PASSWORD"],
+            "jdbc_driver_class" => "org.postgresql.Driver",
+            "jdbc_driver_library" => "/usr/share/logstash/postgresql.jar",
+            "staging_directory" => temp_import_path_plugin,
+            "jdbc_connection_string" => jdbc_connection_string,
+            "loaders" => [
+              {
+                "id" =>"servers",
+                "query" => loader_statement,
+                "local_table" => "servers"
+              }
+            ],
+            "local_db_objects" => local_db_objects,
+            "local_lookups" => [
+              {
+                "query" => lookup_statement,
+                "parameters" => {
+                  "host_ip" => "[host][ip]",
+                  "host_name" =>"[host][name]"
+                },
+                "target" => "server"
+              }
+            ]
+          }
+        end
+
+        it "enhances an event" do
+          plugin.register
+          plugin.filter(event)
+          expect(event.get("server")).to eq([{"ip"=>"10.3.1.1", "name"=>"mv-server-1", "location"=>"MV-9-6-4"}])
+        end
+      end
+
       context "under normal conditions when index_columns is not specified" do
         let(:local_db_objects) do
           [

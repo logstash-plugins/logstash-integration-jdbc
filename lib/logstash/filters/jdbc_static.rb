@@ -165,7 +165,7 @@ module LogStash module Filters class JdbcStatic < LogStash::Filters::Base
 
   def close
     @parsed_loaders.each(&:close)
-    @processor.close
+    @processor.close if @processor
   end
 
   def loader_runner
