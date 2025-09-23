@@ -19,8 +19,13 @@ module LogStash module Filters module Jdbc
           stub_driver_class = double('org.apache.derby.jdbc.EmbeddedDriver').as_null_object
           expect(::Sequel::JDBC).to receive(:load_driver).once.with("org.apache.derby.jdbc.EmbeddedDriver").and_return(stub_driver_class)
           # two calls to connect because ReadWriteDatabase does verify_connection and connect
-          expect(::Sequel).to receive(:connect).once.with(connection_string_regex, {:driver => stub_driver_class, :test => true}).and_return(db)
-          expect(::Sequel).to receive(:connect).once.with(connection_string_regex, {:driver => stub_driver_class}).and_return(db)
+          connection_options = {
+            driver: stub_driver_class,
+            max_connections: 16,
+            pool_timeout: 30,
+          }
+          expect(::Sequel).to receive(:connect).once.with(connection_string_regex, connection_options.merge(:test => true)).and_return(db)
+          expect(::Sequel).to receive(:connect).once.with(connection_string_regex, connection_options).and_return(db)
           expect(read_write_db.empty_record_set).to eq([])
         end
 
@@ -30,8 +35,17 @@ module LogStash module Filters module Jdbc
           password = Util::Password.new("secret")
           stub_driver_class = double('com.example.Driver')
           expect(::Sequel::JDBC).to receive(:load_driver).once.with("a driver class").and_return(stub_driver_class)
-          expect(::Sequel).to receive(:connect).once.with(connection_str, {:driver => stub_driver_class, :user => user, :password => password.value, :test => true}).and_return(db)
-          expect(::Sequel).to receive(:connect).once.with(connection_str, {:driver => stub_driver_class, :user => user, :password => password.value}).and_return(db)
+
+          connection_options = {
+            driver: stub_driver_class,
+            user: user,
+            password: password.value,
+            max_connections: 16,
+            pool_timeout: 30,
+          }
+
+          expect(::Sequel).to receive(:connect).once.with(connection_str, connection_options.merge(:test => true)).and_return(db)
+          expect(::Sequel).to receive(:connect).once.with(connection_str, connection_options).and_return(db)
           described_class.create(connection_str, "a driver class", nil, user, password)
         end
       end
