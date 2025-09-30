@@ -103,6 +103,11 @@ module LogStash module Filters module Jdbc
       super
       # get a fair reentrant read write lock
       @rwlock = java.util.concurrent.locks.ReentrantReadWriteLock.new(true)
+
+      # configure the connection pool to reduce the chances of
+      # a worker thread being unable to acquire a connection.
+      @options_hash[:max_connections] = 16 # sequel default: 4
+      @options_hash[:pool_timeout] = 30    # sequel default: 5
     end
   end
 end end end
