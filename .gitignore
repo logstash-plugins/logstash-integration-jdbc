@@ -8,3 +8,4 @@ build
 checkpoint.sha
 .gradle
 .idea
+lib/logstash-integration-jdbc_jars.rb
