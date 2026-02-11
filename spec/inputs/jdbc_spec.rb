@@ -1673,7 +1673,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "raise a loading error during #register" do
-      expect(File.exists?(invalid_driver_jar_path)).to be true
+      expect(File.exist?(invalid_driver_jar_path)).to be true
       expect(FileTest.readable?(invalid_driver_jar_path)).to be false
 
       expect { plugin.register }

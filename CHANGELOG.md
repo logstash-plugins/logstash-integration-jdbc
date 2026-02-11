@@ -1,3 +1,6 @@
+## 5.6.3
+  - Fix: replace deprecated `File.exists?` with `File.exist?` for Ruby 3.4 (JRuby 10) compatibility [#192](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/192)
+
 ## 5.6.2
   - Re-packaging the plugin [#190](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/190)
 
