@@ -1,3 +1,6 @@
+## UNRELEASED
+  - Feat: Show connection string in Error message
+
 ## 5.5.3
   - [DOC] Rework inline comment to a callout in preparation for upcoming MD conversion [#181](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/181)
 
