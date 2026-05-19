@@ -1,5 +1,18 @@
+
 ## UNRELEASED
-  - Feat: Show connection string in Error message
+  - Feat: Show connection string in error message
+
+## 5.6.3
+  - Fix: replace deprecated `File.exists?` with `File.exist?` for Ruby 3.4 (JRuby 10) compatibility [#192](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/192)
+
+## 5.6.2
+  - Re-packaging the plugin [#190](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/190)
+
+## 5.6.1
+  - Fixes an issue where the `jdbc_static` filter's throughput was artificially limited to 4 concurrent queries, causing the plugin to become a bottleneck in pipelines with more than 4 workers. Each instance of the plugin is now limited to 16 concurrent queries, with increased timeouts to eliminate enrichment failures [#187](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/187)
+
+## 5.6.0
+  - Support other rufus scheduling options in JDBC Input [#183](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/183)
 
 ## 5.5.3
   - [DOC] Rework inline comment to a callout in preparation for upcoming MD conversion [#181](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/181)

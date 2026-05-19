@@ -1,10 +1,2 @@
 import:
   - logstash-plugins/.ci:travis/travis.yml@1.x
-
-jobs:
-  exclude:
-  - env: ELASTIC_STACK_VERSION=7.current
-  - env: SNAPSHOT=true ELASTIC_STACK_VERSION=7.current
-  include:
-  - env: ELASTIC_STACK_VERSION=7.current RUFUS_SCHEDULER_VERSION=3.0.9 SNAPSHOT=true
-  - env: ELASTIC_STACK_VERSION=7.current RUFUS_SCHEDULER_VERSION=3.0.9

@@ -180,6 +180,20 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # exactly once.
   config :schedule, :validate => :string
 
+  # Interval of how soon to run statement again after completion
+  # for example: "1m" (execute again 1 minute after completion)
+  #
+  # There is no interval by default. If no interval is given, then the statement is run
+  # exactly once.
+  config :interval, :validate => :string
+
+  # Start the job periodically after time elapsed
+  # for example: "1m" (execute query every minute)
+  #
+  # There is no period by default. If no period is given, then the statement is run
+  # exactly once.
+  config :period, :validate => :string
+
   # Path to file with last run time.
   # The default will write file to `<path.data>/plugins/inputs/jdbc/logstash_jdbc_last_run`
   # NOTE: it must be a file path and not a directory path
@@ -240,6 +254,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   def register
     @logger = self.logger
+
+    if [@interval, @schedule, @period].compact.size > 1
+      raise LogStash::ConfigurationError.new("Use only one of: interval, period, schedule.")
+    end
+
 
     if @record_last_run
       if @last_run_metadata_path.nil?
@@ -321,6 +340,12 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
     if @schedule
       # scheduler input thread name example: "[my-oracle]|input|jdbc|scheduler"
       scheduler.cron(@schedule) { execute_query(queue) }
+      scheduler.join
+    elsif @interval
+      scheduler.interval(@interval) { execute_query(queue) }
+      scheduler.join
+    elsif @period
+      scheduler.every(@period) { execute_query(queue) }
       scheduler.join
     else
       execute_query(queue)

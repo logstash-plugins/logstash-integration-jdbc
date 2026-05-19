@@ -228,6 +228,33 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  describe "scheduling options" do
+    let(:settings) { super().merge("statement" => "SELECT :num_param as num_param FROM SYSIBM.SYSDUMMY1") }
+    scheduling_options = ["interval", "schedule", "period"]
+    scheduling_options.combination(2).each do |option1, option2|
+      context "when using '#{option1}' and '#{option2}' at the same time" do
+        let(:settings) { super().merge(option1 => 'a', option2 => 'b') }
+        it "raises a configuration error" do
+          expect { plugin.register }.to raise_error(LogStash::ConfigurationError, /Use only one/)
+        end
+      end
+    end
+    context "when using 'schedule', 'period' and 'interval' at the same time" do
+      let(:settings) { super().merge("interval" => "a", "period" => "b", "schedule" => "c") }
+      it "raises a configuration error" do
+        expect { plugin.register }.to raise_error(LogStash::ConfigurationError, /Use only one/)
+      end
+    end
+    scheduling_options.each do |option|
+      context "when using only '#{option}'" do
+        let(:settings) { super().merge(option => "a") }
+        it "does not raise a configuration error" do
+          expect { plugin.register }.to_not raise_error
+        end
+      end
+    end
+  end
+
   context "when scheduling" do
     let(:settings) { {"statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1", "schedule" => "* * * * * UTC"} }
 
@@ -1283,7 +1310,8 @@ describe LogStash::Inputs::Jdbc do
       plugin.register
       plugin.run(queue)
       db = plugin.instance_variable_get(:@database)
-      expect(db.pool).to be_a_kind_of(::Sequel::ThreadedConnectionPool) # pries into internal details
+      # Sequel defaults to TimedQueueConnectionPool on Ruby 3.2+ (JRuby 10+), ThreadedConnectionPool on older versions under the Sequel::ConnectionPool superclass
+      expect(db.pool).to be_a_kind_of(::Sequel::ConnectionPool)
       expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
       expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
 
@@ -1646,7 +1674,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "raise a loading error during #register" do
-      expect(File.exists?(invalid_driver_jar_path)).to be true
+      expect(File.exist?(invalid_driver_jar_path)).to be true
       expect(FileTest.readable?(invalid_driver_jar_path)).to be false
 
       expect { plugin.register }
