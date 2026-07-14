@@ -129,8 +129,19 @@ module LogStash module PluginMixins module Jdbc
     end
 
     def write(value)
-      ::File.write(@path, YAML.dump(value))
+      # Atomic write via temp file + rename to avoid corruption on SIGKILL/OOM-kill.
+      # Previously used File.write which is truncate-then-write: if the process is
+      # killed between open(O_TRUNC) and write(), the metadata file is left empty,
+      # causing :sql_last_value to fall back to the default (0 / 1970-01-01) and
+      # triggering a full-table scan on next run.
+      # rename(2) is atomic on the same filesystem, so the target file is either
+      # fully updated or untouched.
+      tmp = "#{@path}.tmp.#{Process.pid}"
+      ::File.write(tmp, YAML.dump(value))
+      ::File.rename(tmp, @path)
       @exists = true
+    ensure
+      ::File.delete(tmp) if tmp && ::File.exist?(tmp)
     end
   end
 
