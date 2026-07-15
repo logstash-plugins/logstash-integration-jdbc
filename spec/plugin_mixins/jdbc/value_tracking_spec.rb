@@ -109,5 +109,59 @@ module LogStash module PluginMixins module Jdbc
       end
 
     end
+
+    context "FileHandler atomic write" do
+      let(:temp_file) { Tempfile.new('last_run_tracker') }
+      let(:path) { temp_file.path }
+      let(:handler) { FileHandler.new(path) }
+
+      after(:each) do
+        temp_file.close
+        temp_file.unlink
+      end
+
+      it "should write value correctly via temp file + rename" do
+        handler.write(42)
+        expect(::File.read(path)).to eq YAML.dump(42)
+      end
+
+      it "should not leave a temp file after successful write" do
+        handler.write(42)
+        tmp_files = Dir.glob("#{path}.tmp.*")
+        expect(tmp_files).to be_empty
+      end
+
+      it "should preserve existing file when temp write fails" do
+        # seed with a valid value
+        ::File.write(path, YAML.dump(99))
+
+        # simulate failure when writing the temp file
+        allow(::File).to receive(:write).and_call_original
+        allow(::File).to receive(:write).with(/\.tmp\.\d+$/, anything).and_raise(Errno::ENOSPC)
+
+        expect { handler.write(100) }.to raise_error(Errno::ENOSPC)
+
+        # original file must be untouched
+        expect(::File.read(path)).to eq YAML.dump(99)
+        # no temp file residue
+        expect(Dir.glob("#{path}.tmp.*")).to be_empty
+      end
+
+      it "should keep old content intact until rename succeeds" do
+        ::File.write(path, YAML.dump(1))
+
+        # intercept rename to verify target still has old content at that moment
+        old_content_during_rename = nil
+        allow(::File).to receive(:rename).and_wrap_original do |original, from, to|
+          old_content_during_rename = ::File.read(to)
+          original.call(from, to)
+        end
+
+        handler.write(2)
+
+        expect(old_content_during_rename).to eq YAML.dump(1)
+        expect(::File.read(path)).to eq YAML.dump(2)
+      end
+    end
   end
 end end end

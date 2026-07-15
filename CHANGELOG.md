@@ -1,3 +1,6 @@
+## 5.6.4
+  - Fix: persist `last_run` metadata atomically (write-temp-then-rename) to prevent corruption when the process is killed (SIGKILL/OOM-killer) mid-write, which previously caused `:sql_last_value` to fall back to the default and trigger a full-table scan
+
 ## 5.6.3
   - Fix: replace deprecated `File.exists?` with `File.exist?` for Ruby 3.4 (JRuby 10) compatibility [#192](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/192)
 
