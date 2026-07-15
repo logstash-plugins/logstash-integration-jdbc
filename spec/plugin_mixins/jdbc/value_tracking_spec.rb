@@ -113,7 +113,7 @@ module LogStash module PluginMixins module Jdbc
     context "FileHandler atomic write" do
       let(:temp_file) { Tempfile.new('last_run_tracker') }
       let(:path) { temp_file.path }
-      let(:handler) { ValueTracking::FileHandler.new(path) }
+      let(:handler) { FileHandler.new(path) }
 
       after(:each) do
         temp_file.close
