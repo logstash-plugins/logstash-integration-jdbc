@@ -160,6 +160,13 @@ module LogStash  module PluginMixins module Jdbc
       logger.error('', e) # prints nested causes
     end
 
+    def log_jdbc_query_exception(e)
+      details = { exception: e.class, message: e.message }
+      details[:cause] = e.cause.inspect if e.cause
+      details[:backtrace] = e.backtrace if @logger.debug?
+      @logger.warn("Exception when executing JDBC query", details)
+    end
+
     def open_jdbc_connection
       @connection_lock.synchronize do
         # at this point driver is already loaded
@@ -233,10 +240,7 @@ module LogStash  module PluginMixins module Jdbc
             end
             success = true
           rescue Sequel::Error, Java::JavaSql::SQLException => e
-            details = { exception: e.class, message: e.message }
-            details[:cause] = e.cause.inspect if e.cause
-            details[:backtrace] = e.backtrace if @logger.debug?
-            @logger.warn("Exception when executing JDBC query", details)
+            log_jdbc_query_exception(e)
 
             if retry_attempts == 0
               @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
@@ -249,8 +253,7 @@ module LogStash  module PluginMixins module Jdbc
             @value_tracker.set_value(sql_last_value)
           end
         rescue Sequel::Error, Java::JavaSql::SQLException => e
-          # Connection-level errors from open_jdbc_connection are already logged
-          # by jdbc_connect's internal retry loop — just let ensure clean up.
+          log_jdbc_query_exception(e)
         ensure
           close_jdbc_connection
         end
