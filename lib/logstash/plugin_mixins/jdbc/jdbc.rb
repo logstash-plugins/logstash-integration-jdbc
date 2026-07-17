@@ -222,30 +222,35 @@ module LogStash  module PluginMixins module Jdbc
 
       @connection_lock.synchronize do
         begin
-          retry_attempts -= 1
           open_jdbc_connection
-          sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
-          @tracking_column_warning_sent = false
-          @statement_handler.perform_query(@database, @value_tracker.value) do |row|
-            sql_last_value = get_column_value(row) if @use_column_value
-            yield extract_values_from(row)
-          end
-          success = true
-        rescue Sequel::Error, Java::JavaSql::SQLException => e
-          details = { exception: e.class, message: e.message }
-          details[:cause] = e.cause.inspect if e.cause
-          details[:backtrace] = e.backtrace if @logger.debug?
-          @logger.warn("Exception when executing JDBC query", details)
+          begin
+            retry_attempts -= 1
+            sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
+            @tracking_column_warning_sent = false
+            @statement_handler.perform_query(@database, @value_tracker.value) do |row|
+              sql_last_value = get_column_value(row) if @use_column_value
+              yield extract_values_from(row)
+            end
+            success = true
+          rescue Sequel::Error, Java::JavaSql::SQLException => e
+            details = { exception: e.class, message: e.message }
+            details[:cause] = e.cause.inspect if e.cause
+            details[:backtrace] = e.backtrace if @logger.debug?
+            @logger.warn("Exception when executing JDBC query", details)
 
-          if retry_attempts == 0
-            @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
+            if retry_attempts == 0
+              @logger.error("Unable to execute statement. Tried #{@statement_retry_attempts} times.")
+            else
+              @logger.error("Unable to execute statement. Trying again.")
+              sleep(@statement_retry_attempts_wait_time)
+              retry
+            end
           else
-            @logger.error("Unable to execute statement. Trying again.")
-            sleep(@statement_retry_attempts_wait_time)
-            retry
+            @value_tracker.set_value(sql_last_value)
           end
-        else
-          @value_tracker.set_value(sql_last_value)
+        rescue Sequel::Error, Java::JavaSql::SQLException => e
+          # Connection-level errors from open_jdbc_connection are already logged
+          # by jdbc_connect's internal retry loop — just let ensure clean up.
         ensure
           close_jdbc_connection
         end

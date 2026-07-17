@@ -1448,6 +1448,58 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
       plugin.stop
     end
+
+    it "opens the connection only once across statement retries" do
+      mixin_settings['statement_retry_attempts'] = 3
+      mixin_settings['statement_retry_attempts_wait_time'] = 0
+      queue = Queue.new
+      plugin.register
+
+      handler = plugin.instance_variable_get(:@statement_handler)
+      allow(handler).to receive(:perform_query).and_raise(Sequel::PoolTimeout)
+      allow(plugin.logger).to receive(:warn)
+      allow(plugin.logger).to receive(:error)
+
+      expect(plugin).to receive(:open_jdbc_connection).once.and_call_original
+
+      plugin.run(queue)
+      plugin.stop
+    end
+
+    it "closes the connection after statement retries are exhausted" do
+      mixin_settings['statement_retry_attempts'] = 2
+      mixin_settings['statement_retry_attempts_wait_time'] = 0
+      queue = Queue.new
+      plugin.register
+
+      handler = plugin.instance_variable_get(:@statement_handler)
+      allow(handler).to receive(:perform_query).and_raise(Sequel::PoolTimeout)
+      allow(plugin.logger).to receive(:warn)
+      allow(plugin.logger).to receive(:error)
+
+      expect(plugin).to receive(:close_jdbc_connection).at_least(:once).and_call_original
+
+      plugin.run(queue)
+      plugin.stop
+    end
+
+    it "closes the connection when open_jdbc_connection fails after database is assigned" do
+      queue = Queue.new
+      plugin.register
+
+      allow(plugin).to receive(:open_jdbc_connection).and_wrap_original do |m, *args|
+        # simulate partial initialization: jdbc_connect succeeds but test_connection fails
+        plugin.instance_variable_set(:@database, db)
+        raise Sequel::DatabaseConnectionError, "test_connection failed"
+      end
+      allow(plugin.logger).to receive(:warn)
+      allow(plugin.logger).to receive(:error)
+
+      expect(plugin).to receive(:close_jdbc_connection).at_least(:once).and_call_original
+
+      plugin.run(queue)
+      plugin.stop
+    end
   end
 
   context "when encoding of some columns need to be changed" do
