@@ -32,6 +32,7 @@ module LogStash module PluginMixins module Jdbc
       # concurrency related problems with multiple pipelines and multiple drivers
       DRIVERS_LOADING_LOCK.lock()
       begin
+        preload_sequel_jdbc_subadapter
         load_driver_jars
         begin
           @driver_impl = load_jdbc_driver_class
@@ -48,6 +49,23 @@ module LogStash module PluginMixins module Jdbc
       ensure
         DRIVERS_LOADING_LOCK.unlock()
       end
+    end
+
+    def preload_sequel_jdbc_subadapter
+      subadapter = jdbc_subadapter_scheme
+      return unless subadapter
+
+      # Ensure first-time Sequel jdbc/<subadapter> loading happens serially.
+      Sequel::Database.load_adapter(subadapter, :map => Sequel::JDBC::DATABASE_SETUP, :subdir => 'jdbc')
+    rescue Sequel::AdapterNotFound
+      # Some JDBC URLs can work without a dedicated Sequel sub-adapter.
+      nil
+    end
+
+    def jdbc_subadapter_scheme
+      return nil unless @jdbc_connection_string
+
+      @jdbc_connection_string[/\Ajdbc:([^:]+):/, 1]&.to_sym
     end
 
     def load_driver_jars
