@@ -59,6 +59,7 @@ module LogStash module PluginMixins module Jdbc
       Sequel::Database.load_adapter(subadapter, :map => Sequel::JDBC::DATABASE_SETUP, :subdir => 'jdbc')
     rescue Sequel::AdapterNotFound
       # Some JDBC URLs can work without a dedicated Sequel sub-adapter.
+      @logger.debug("Skipping Sequel JDBC sub-adapter preload", :subadapter => subadapter, :jdbc_connection_string => @jdbc_connection_string)
       nil
     end
 
