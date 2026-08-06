@@ -65,7 +65,7 @@ module LogStash module PluginMixins module Jdbc
     def jdbc_subadapter_scheme
       return nil unless @jdbc_connection_string
 
-      @jdbc_connection_string[/\Ajdbc:([^:]+):/, 1]&.to_sym
+      @jdbc_connection_string[/\Ajdbc:([^:]+):/, 1]&.downcase&.to_sym
     end
 
     def load_driver_jars

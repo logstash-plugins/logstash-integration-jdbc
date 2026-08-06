@@ -1913,10 +1913,24 @@ describe LogStash::Inputs::Jdbc do
       allow(plugin).to receive(:load_jdbc_driver_class).and_return(double("driver_class"))
     end
 
+    it "extracts jdbc sub-adapter scheme in lowercase" do
+      plugin.instance_variable_set(:@jdbc_connection_string, "jdbc:Oracle:thin:@//localhost:1521/FREEPDB1")
+
+      expect(plugin.send(:jdbc_subadapter_scheme)).to eq(:oracle)
+    end
+
     it "preloads sequel jdbc sub-adapter for jdbc URLs" do
       expect(Sequel::Database).to receive(:load_adapter).with(:derby, :map => Sequel::JDBC::DATABASE_SETUP, :subdir => 'jdbc').and_call_original
 
       plugin.send(:load_driver)
+    end
+
+    it "uses normalized jdbc sub-adapter scheme while preloading" do
+      plugin.instance_variable_set(:@jdbc_connection_string, "jdbc:Oracle:thin:@//localhost:1521/FREEPDB1")
+
+      expect(Sequel::Database).to receive(:load_adapter).with(:oracle, :map => Sequel::JDBC::DATABASE_SETUP, :subdir => 'jdbc').and_return(nil)
+
+      expect { plugin.send(:load_driver) }.not_to raise_error
     end
 
     it "does not try to preload when URL is not jdbc" do
