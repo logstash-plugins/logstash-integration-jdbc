@@ -3,7 +3,7 @@ require "logstash/inputs/jdbc"
 require "sequel"
 require "sequel/adapters/jdbc"
 require "stud/temporary"
-require "security_statements_fixture"
+require_relative "security_statements_fixture"
 
 
 describe LogStash::Inputs::Jdbc, :integration => true do
