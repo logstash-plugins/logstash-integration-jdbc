@@ -166,6 +166,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     end
 
     before(:all) do
+      require "/usr/share/logstash/postgresql.jar"
       db = Sequel.connect(jdbc_connection_string,
                           :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
       SecurityStatementsFixture.populate(db, OOM_NUM_ROWS)
@@ -173,6 +174,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     end
 
     after(:all) do
+      require "/usr/share/logstash/postgresql.jar"
       db = Sequel.connect(jdbc_connection_string,
                           :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
       SecurityStatementsFixture.clear_table(db)
