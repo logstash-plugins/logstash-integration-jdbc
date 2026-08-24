@@ -140,6 +140,10 @@ module LogStash module PluginMixins module Jdbc
     # @yieldparam row [Hash{Symbol=>Object}]
     def perform_query(db, sql_last_value)
       build_query(db, sql_last_value) { |row| yield row }
+      # query = build_query(db, sql_last_value) { |row| yield row }
+      # query.each do |row|
+      #   yield row
+      # end
     end
 
     private
