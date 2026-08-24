@@ -2,6 +2,8 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "sequel"
 require "sequel/adapters/jdbc"
+require "stud/temporary"
+require "security_statements_fixture"
 
 
 describe LogStash::Inputs::Jdbc, :integration => true do
@@ -12,6 +14,8 @@ describe LogStash::Inputs::Jdbc, :integration => true do
   # For Travis and CI based on docker, we source from ENV
   jdbc_connection_string = ENV.fetch("PG_CONNECTION_STRING",
                                      "jdbc:postgresql://postgresql:5432") + "/jdbc_input_db?user=postgres"
+
+  OOM_NUM_ROWS = 1_000_000
 
   let(:settings) do
     { "jdbc_driver_class" => "org.postgresql.Driver",
@@ -132,6 +136,59 @@ describe LogStash::Inputs::Jdbc, :integration => true do
       end
       q = Queue.new
       expect{ plugin.run(q) }.not_to raise_error
+    end
+  end
+
+  context "when scanning #{OOM_NUM_ROWS} rows via a prepared statement (issue #198)" do
+    # Discards event objects so we never materialise NUM_ROWS Logstash events
+    # in heap — only the count matters for this assertion.
+    let(:queue) do
+      counter = java.util.concurrent.atomic.AtomicLong.new(0)
+      q = Object.new
+      q.define_singleton_method(:<<) { |_event| counter.increment_and_get }
+      q.define_singleton_method(:count) { counter.get }
+      q
+    end
+
+    let(:settings) do
+      {
+        "jdbc_driver_class"              => "org.postgresql.Driver",
+        "jdbc_connection_string"         => jdbc_connection_string,
+        "jdbc_driver_library"            => "/usr/share/logstash/postgresql.jar",
+        "jdbc_user"                      => "postgres",
+        "jdbc_password"                  => ENV["POSTGRES_PASSWORD"],
+        "statement"                      => "SELECT * FROM security_statements",
+        "use_prepared_statements"        => true,
+        "prepared_statement_name"        => "security_scan_all",
+        "prepared_statement_bind_values" => [],
+        "last_run_metadata_path"         => Stud::Temporary.pathname
+      }
+    end
+
+    before(:all) do
+      db = Sequel.connect(jdbc_connection_string,
+                          :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
+      SecurityStatementsFixture.create_table(db)
+      SecurityStatementsFixture.populate(db, OOM_NUM_ROWS)
+      db.disconnect
+    end
+
+    after(:all) do
+      db = Sequel.connect(jdbc_connection_string,
+                          :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
+      SecurityStatementsFixture.drop_table(db)
+      db.disconnect
+    end
+
+    after(:each) do
+      plugin.stop rescue nil
+    end
+
+    it "reads all #{OOM_NUM_ROWS} rows exactly once without materialising the full result set" do
+      plugin.register
+      plugin.run(queue)
+
+      expect(queue.count).to eq(OOM_NUM_ROWS)
     end
   end
 end
