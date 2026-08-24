@@ -165,32 +165,6 @@ module SecurityStatementsFixture
 
   module_function
 
-  def create_table(db)
-    db.run("DROP TABLE IF EXISTS security_statements")
-    db.run(<<~SQL)
-      CREATE TABLE security_statements (
-        id                BIGSERIAL       PRIMARY KEY,
-        cve_id            VARCHAR(30)     NOT NULL,
-        score             NUMERIC(3,1)    NOT NULL CHECK (score >= 0.0 AND score <= 10.0),
-        status            VARCHAR(12)     NOT NULL CHECK (status IN ('affected', 'non_affected')),
-        statement         TEXT            NOT NULL,
-        title             VARCHAR(512),
-        description       TEXT,
-        affected_products TEXT,
-        remediation       TEXT,
-        "references"      TEXT,
-        published_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
-        updated_at        TIMESTAMP       NOT NULL DEFAULT NOW(),
-        reporter          VARCHAR(255),
-        notes             TEXT
-      )
-    SQL
-    db.run("CREATE INDEX idx_sec_cve_id       ON security_statements (cve_id)")
-    db.run("CREATE INDEX idx_sec_status       ON security_statements (status)")
-    db.run("CREATE INDEX idx_sec_score        ON security_statements (score)")
-    db.run("CREATE INDEX idx_sec_published_at ON security_statements (published_at)")
-  end
-
   def populate(db, num_rows)
     rng      = Random.new(42)
     statuses = %w[affected non_affected]
@@ -223,7 +197,7 @@ module SecurityStatementsFixture
     puts "Done: #{num_rows} rows in #{'%.1f' % (Time.now - start)}s"
   end
 
-  def drop_table(db)
-    db.run("DROP TABLE IF EXISTS security_statements")
+  def clear_table(db)
+    db.run("TRUNCATE TABLE security_statements")
   end
 end

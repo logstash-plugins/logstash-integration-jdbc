@@ -140,7 +140,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
   end
 
   context "when scanning #{OOM_NUM_ROWS} rows via a prepared statement (issue #198)" do
-    # Discards event objects so we never materialise NUM_ROWS Logstash events
+    # Discards event objects so we never materialise OOM_NUM_ROWS Logstash events
     # in heap — only the count matters for this assertion.
     let(:queue) do
       counter = java.util.concurrent.atomic.AtomicLong.new(0)
@@ -168,7 +168,6 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     before(:all) do
       db = Sequel.connect(jdbc_connection_string,
                           :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
-      SecurityStatementsFixture.create_table(db)
       SecurityStatementsFixture.populate(db, OOM_NUM_ROWS)
       db.disconnect
     end
@@ -176,7 +175,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
     after(:all) do
       db = Sequel.connect(jdbc_connection_string,
                           :user => "postgres", :password => ENV["POSTGRES_PASSWORD"])
-      SecurityStatementsFixture.drop_table(db)
+      SecurityStatementsFixture.clear_table(db)
       db.disconnect
     end
 
