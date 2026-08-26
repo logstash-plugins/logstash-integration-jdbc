@@ -139,19 +139,15 @@ module LogStash module PluginMixins module Jdbc
     # @param sql_last_value [Integet|DateTime|Time]
     # @yieldparam row [Hash{Symbol=>Object}]
     def perform_query(db, sql_last_value)
-      build_query(db, sql_last_value) { |row| yield row }
-    end
-
-    private
-
-    def build_query(db, sql_last_value, &block)
       # under the scheduler the Sequel database instance is recreated each time
       # so the previous prepared statements are lost, add back
       prepared = db.prepared_statement(name)
       prepared ||= db[statement, *positional_bind_placeholders].prepare(:each, name)
 
-      prepared.call(positional_bind_mapping(sql_last_value), &block) 
+      prepared.call(positional_bind_mapping(sql_last_value)) { |row| yield row }
     end
+
+    private
 
     def create_positional_bind_mapping(bind_values_array)
       hash = {}
