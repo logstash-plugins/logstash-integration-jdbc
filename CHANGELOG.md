@@ -1,3 +1,6 @@
+## 5.6.6
+  - Fix access method to big tables to avoid materialise the full result set in memory and generate an out-of-memory error. [#204](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/204)
+
 ## 5.6.5
   - Prevent concurrent Sequel JDBC subadapter initialization races by preloading adapter at driver load time [#203](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/203)
 
