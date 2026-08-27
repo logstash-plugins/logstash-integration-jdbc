@@ -69,3 +69,25 @@ CREATE TABLE employee (
 
 INSERT INTO employee VALUES (1, 'David', 'Blenkinsop', '2003-02-01', '10:05:00', '2003-02-01 01:02:03');
 INSERT INTO employee VALUES (2, 'Mark', 'Guckenheimer', '2003-02-01', '10:05:00','2003-02-01 01:02:03');
+
+CREATE TABLE IF NOT EXISTS security_statements (
+    id                BIGSERIAL       PRIMARY KEY,
+    cve_id            VARCHAR(30)     NOT NULL,
+    score             NUMERIC(3,1)    NOT NULL CHECK (score >= 0.0 AND score <= 10.0),
+    status            VARCHAR(12)     NOT NULL CHECK (status IN ('affected', 'non_affected')),
+    statement         TEXT            NOT NULL,
+    title             VARCHAR(512),
+    description       TEXT,
+    affected_products TEXT,
+    remediation       TEXT,
+    "references"      TEXT,
+    published_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMP       NOT NULL DEFAULT NOW(),
+    reporter          VARCHAR(255),
+    notes             TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sec_cve_id       ON security_statements (cve_id);
+CREATE INDEX IF NOT EXISTS idx_sec_status       ON security_statements (status);
+CREATE INDEX IF NOT EXISTS idx_sec_score        ON security_statements (score);
+CREATE INDEX IF NOT EXISTS idx_sec_published_at ON security_statements (published_at);
