@@ -83,6 +83,10 @@ before retrieving more results from the result-set. This is configured in
 this plugin using the `jdbc_fetch_size` configuration option. No fetch size
 is set by default in this plugin, so the specific driver's default size will
 be used.
+NOTE: 
+Each driver JDBC driver and backend has its own requirements for using server-side cursors.
+Before using `jdbc_fetch_size`, check your driver's manual.
+For example, the MySQL driver requires explicit opt-in via `useCursorFetch=true`, while the PostgreSQL driver simply requires that the fetch size is a positive integer.
 
 ==== Usage:
 
