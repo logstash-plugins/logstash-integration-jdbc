@@ -250,6 +250,8 @@ module LogStash  module PluginMixins module Jdbc
           else
             @value_tracker.set_value(sql_last_value)
           end
+        rescue Sequel::Error, Java::JavaSql::SQLException => e
+          log_jdbc_query_exception(e)
         ensure
           close_jdbc_connection
         end
