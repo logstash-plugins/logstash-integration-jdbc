@@ -124,7 +124,7 @@ module LogStash  module PluginMixins module Jdbc
       loop do
         retry_attempts -= 1
         begin
-          @sql_connect = Sequel.connect(@jdbc_connection_string, sequel_opts)
+          return Sequel.connect(@jdbc_connection_string, sequel_opts)
         rescue Sequel::PoolTimeout => e
           if retry_attempts <= 0
             @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
@@ -143,8 +143,6 @@ module LogStash  module PluginMixins module Jdbc
         rescue => e
           @logger.error("Unable to connect to database. Unknown error.", error_details(e))
           return
-        else
-          return @sql_connect
         end
         sleep(@connection_retry_attempts_wait_time)
       end
