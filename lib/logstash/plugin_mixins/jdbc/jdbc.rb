@@ -267,7 +267,7 @@ module LogStash  module PluginMixins module Jdbc
         rescue Sequel::Error, Java::JavaSql::SQLException => e
           log_jdbc_query_exception(e)
         rescue => e
-          @logger.error("Failed to open connection", :exception => e)
+          @logger.error("Failed to execute statement. Unknown Error.", :exception => e)
         ensure
           close_jdbc_connection
         end
