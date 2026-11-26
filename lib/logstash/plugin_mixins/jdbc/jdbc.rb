@@ -177,12 +177,7 @@ module LogStash  module PluginMixins module Jdbc
         # at this point driver is already loaded
         Sequel.application_timezone = @plugin_timezone.to_sym
 
-        begin
-          @database = jdbc_connect()
-        rescue => e
-          @logger.error("Unknown exception connecting to database", :exception => e)
-          return
-        end
+        @database = jdbc_connect()
         @database.extension(:pagination)
         if @jdbc_default_timezone
           @database.extension(:named_timezones)
