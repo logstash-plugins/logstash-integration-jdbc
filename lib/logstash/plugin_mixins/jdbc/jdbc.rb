@@ -175,8 +175,8 @@ module LogStash  module PluginMixins module Jdbc
         begin
           @database = jdbc_connect()
         rescue => e
-          @logger.error("Unknown exception", :exception => e)
-          break
+          @logger.error("Unknown exception connecting to database", :exception => e)
+          return
         end
         @database.extension(:pagination)
         if @jdbc_default_timezone
