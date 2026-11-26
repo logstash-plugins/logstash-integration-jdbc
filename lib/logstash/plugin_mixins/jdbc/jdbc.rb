@@ -140,9 +140,9 @@ module LogStash  module PluginMixins module Jdbc
           else
             @logger.error("Unable to connect to database. Trying again", error_details(e, trace: false))
           end
-        end
         rescue => e
           @logger.error("Unable to connect to database. Unknown error.", error_details(e))
+          return
         end
         sleep(@connection_retry_attempts_wait_time)
       end
