@@ -197,7 +197,7 @@ module LogStash  module PluginMixins module Jdbc
           #TODO return false and let the plugin raise a LogStash::ConfigurationError
           raise e
         rescue => e
-          @logger.error("Unknown exception", :exception => e
+          @logger.error("Unknown exception while testing connection.", :exception => e
         end
 
         @database.sql_log_level = @sql_log_level.to_sym
