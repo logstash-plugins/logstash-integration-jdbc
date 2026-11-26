@@ -1,3 +1,6 @@
+## 5.6.7
+  - Reduce Error logging and make error logging dependent of logging set to debug. [#207](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/207)
+
 ## 5.6.6
   - Fix access method to big tables to avoid materialise the full result set in memory and generate an out-of-memory error. [#204](https://github.com/logstash-plugins/logstash-integration-jdbc/pull/204)
 
