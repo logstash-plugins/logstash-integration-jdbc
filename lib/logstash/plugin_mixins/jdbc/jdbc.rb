@@ -134,8 +134,8 @@ module LogStash  module PluginMixins module Jdbc
           end
         rescue Java::JavaSql::SQLException, ::Sequel::Error => e
           if retry_attempts <= 0
-            log_java_exception(e.cause)
-            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", error_details(e, trace: true))
+            log_java_exception(e.cause) if @logger.debug?
+            @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", error_details(e))
             raise e
           else
             @logger.error("Unable to connect to database. Trying again", error_details(e, trace: false))
