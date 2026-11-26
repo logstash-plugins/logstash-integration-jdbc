@@ -172,7 +172,12 @@ module LogStash  module PluginMixins module Jdbc
         # at this point driver is already loaded
         Sequel.application_timezone = @plugin_timezone.to_sym
 
-        @database = jdbc_connect()
+        begin
+          @database = jdbc_connect()
+        rescue => e
+          @logger.error("Unknown exception", :exception => e)
+          break
+        end
         @database.extension(:pagination)
         if @jdbc_default_timezone
           @database.extension(:named_timezones)
@@ -191,6 +196,8 @@ module LogStash  module PluginMixins module Jdbc
           @logger.warn("Failed test_connection.", :exception => e)
           #TODO return false and let the plugin raise a LogStash::ConfigurationError
           raise e
+        rescue => e
+          @logger.error("Unknown exception", :exception => e
         end
 
         @database.sql_log_level = @sql_log_level.to_sym
@@ -254,6 +261,8 @@ module LogStash  module PluginMixins module Jdbc
           end
         rescue Sequel::Error, Java::JavaSql::SQLException => e
           log_jdbc_query_exception(e)
+        rescue => e
+          @logger.error("Failed to open connection", :exception => e)
         ensure
           close_jdbc_connection
         end
