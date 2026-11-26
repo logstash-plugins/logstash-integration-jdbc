@@ -189,8 +189,6 @@ module LogStash  module PluginMixins module Jdbc
           @logger.warn("Failed test_connection.", :exception => e)
           #TODO return false and let the plugin raise a LogStash::ConfigurationError
           raise e
-        rescue => e
-          @logger.error("Unknown exception while testing connection.", :exception => e)
         end
 
         @database.sql_log_level = @sql_log_level.to_sym
@@ -252,10 +250,6 @@ module LogStash  module PluginMixins module Jdbc
           else
             @value_tracker.set_value(sql_last_value)
           end
-        rescue Sequel::Error, Java::JavaSql::SQLException => e
-          log_jdbc_query_exception(e)
-        rescue => e
-          @logger.error("Failed to execute statement. Unknown Error.", :exception => e)
         ensure
           close_jdbc_connection
         end
